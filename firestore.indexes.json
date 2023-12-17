@@ -1,0 +1,12 @@
+{
+  "indexes": [
+    {
+      "collectionId": "players",
+      "fields": [
+        { "fieldPath": "email", "mode": "ASCENDING" },
+        { "fieldPath": "name", "mode": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
