@@ -7,7 +7,7 @@ from firebase_admin import firestore, initialize_app
 #from firebase_functions import logger
 import logger
 from google.cloud.firestore_v1.base_query import FieldFilter
-from firestore import writePlayerToFirestore
+from firestore import writePlayerToFirestore,addMatchToFirestore,getPlayerDetails
 
 import logging
 
@@ -65,19 +65,32 @@ def addMatch(req: https_fn.Request) -> https_fn.Response:
         if not request_json:
             return https_fn.Response("Invalid request", status=400)
 
-        # Example match data
+        # Extract match data
         player_a_id = request_json.get("player_a_id")
         player_b_id = request_json.get("player_b_id")
-        score = request_json.get("score")
-        match_date = request_json.get("date")
-        location = request_json.get("location")
+        match_info = {
+            "match_id": request_json.get("match_id"),  # Can be None
+            "player_a_id": player_a_id,
+            "player_b_id": player_b_id,
+            "score": request_json.get("score"),
+            "match_date": request_json.get("date"),
+            "location": request_json.get("location")
+        }
+        logger.info(f"Incoming request={match_info}")
 
-        match = [player_a_id, player_b_id, score, match_date, location]
-        logger.info(f"Incoming request={match}")
-
-        # Validate the data
-        if not all([player_a_id, player_b_id, score, match_date, location]):
+        if "match_id" not in match_info and not all(value for key, value in match_info.items() if key != "match_id"):
             return https_fn.Response("Missing match parameters", status=400)
+
+
+        firestore_client: google.cloud.firestore.Client = firestore.client()
+        
+        # Check if both players exist
+        if "match_id" not in match_info and not getPlayerDetails(firestore_client,player_a_id):
+            return https_fn.Response(f"Player A (ID= {player_a_id}) does not exist", status=400)
+        if "match_id" not in match_info and not getPlayerDetails(firestore_client,player_b_id):
+            return https_fn.Response(f"Player B (ID= {player_b_id}) does not exist", status=400)
+        # Add match
+        addMatchToFirestore(firestore_client.transaction(), firestore_client, match_info)
 
         return https_fn.Response("Match added successfully")
 
