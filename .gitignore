@@ -68,3 +68,7 @@ node_modules/
 # virtual environment
 .venv/
 venv/
+
+# python
+__pycache__/
+*.pyc
