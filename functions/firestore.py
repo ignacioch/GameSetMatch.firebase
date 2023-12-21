@@ -31,9 +31,23 @@ def writePlayerToFirestore(transaction,firestore_client, player:Player):
     transaction.set(new_player_ref, new_player)
 
 
-def getPlayerDetails(firestore_client,playerId):
+def getPlayerDetailsFromFirestore(firestore_client, player_id=None, name=None, email=None):
     players_collection = firestore_client.collection(PLAYERS_COLLECTIONS)
-    return players_collection.document(playerId).get().exists
+    query = players_collection.limit(1)  # Adjust the limit as needed
+
+    if player_id:
+        query = query.where('id', '==', player_id)
+    if name:
+        query = query.where('name', '==', name)
+    if email:
+        query = query.where('email', '==', email)
+
+    results = query.stream()
+    for doc in results:
+        return doc.to_dict()  # Return the first matching document
+
+    return None  # Return None if no player found
+
 
 ''' 
     Read/write into matches collection as a single transaction
