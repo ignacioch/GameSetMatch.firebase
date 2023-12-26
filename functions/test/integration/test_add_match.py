@@ -45,3 +45,9 @@ def test_add_new_match_with_match_id():
     assert response.status_code == 200
 
 # Additional test cases as needed...
+
+def test_delete_match():
+    # Assuming match_id is known
+    match_id = "match1"
+    response = requests.post(f"{BASE_URL}/deleteMatch", data={"match_id": match_id})
+    assert response.status_code == 200

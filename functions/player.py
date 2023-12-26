@@ -4,9 +4,11 @@ class Player:
         self.email = email
         self.dob = dob
         self.level = level
+        self.id = id  # Optional ID attribute
 
     def to_dict(self):
         return {
+            "id":self.id,
             "name": self.name,
             "email": self.email,
             "DOB": self.dob,

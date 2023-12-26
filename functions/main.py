@@ -16,7 +16,7 @@ import json
 from player import Player
 from match import Match
 import logger
-from firestore import writePlayerToFirestore,addMatchToFirestore,getPlayerDetailsFromFirestore
+from firestore import writePlayerToFirestore,addMatchToFirestore,getPlayerDetailsFromFirestore,deletePlayerFromFirestore,deleteMatchFromFirestore,getMatchDetailsFromFirestore
 
 app = initialize_app(options={"projectId":"gamesetmatch-ef350"})
 #
@@ -27,8 +27,22 @@ app = initialize_app(options={"projectId":"gamesetmatch-ef350"})
 
 @https_fn.on_request()
 def registerPlayer(req: https_fn.Request) -> https_fn.Response:
-    """Take the text parameter passed to this HTTP endpoint and insert it into
-    a new document in the players collection."""
+    """
+    Registers a new player and adds their information to the Firestore database.
+    
+    This function parses JSON data from the incoming HTTP POST request and creates
+    a new player entry in Firestore. It requires 'name', 'email', 'DOB', and 'level'
+    fields in the JSON payload.
+
+    Args:
+        req (https_fn.Request): The request object containing JSON data.
+
+    Returns:
+        https_fn.Response: A JSON response containing the newly created player's data,
+        including their unique Firestore ID, or an error message with an appropriate
+        HTTP status code on failure.
+    """
+
     # Parse JSON data from request body
     request_json = req.get_json()
     logger.debug(f"Incoming request_raw={request_json}")
@@ -48,10 +62,12 @@ def registerPlayer(req: https_fn.Request) -> https_fn.Response:
         return https_fn.Response("Required parameters NOT provided", status=400)
 
     firestore_client: google.cloud.firestore.Client = firestore.client()
-        
+            
     try:
-        writePlayerToFirestore(firestore_client.transaction(),firestore_client,player)
-        return https_fn.Response(f"Player {name} added successfully.")
+        player = Player(name, email, dob, level)
+        saved_player = writePlayerToFirestore(firestore_client.transaction(), firestore_client, player)
+        logger.info(f"Player {saved_player.id}:{saved_player.name} added successfully.")
+        return https_fn.Response(json.dumps({"player": saved_player.to_dict()}), status=200, content_type="application/json")
     except ValueError as e:
         return https_fn.Response(str(e), status=400)
 
@@ -59,8 +75,21 @@ def registerPlayer(req: https_fn.Request) -> https_fn.Response:
 
 @https_fn.on_request()
 def addMatch(req: https_fn.Request) -> https_fn.Response:
-    """Take the text parameter passed to this HTTP endpoint and insert it into
-    a new document in the matches collection."""
+    """
+    Adds a new match record to the Firestore database.
+
+    Extracts match details from the JSON payload of an HTTP POST request. It requires
+    'player_a_id', 'player_b_id', 'score', 'date', and 'location' fields, and optionally
+    accepts a 'match_id'.
+
+    Args:
+        req (https_fn.Request): The request object containing JSON data for the match.
+
+    Returns:
+        https_fn.Response: A JSON response containing the newly added match's data,
+        including its Firestore ID, or an error message with an appropriate HTTP
+        status code on failure.
+    """
     # Parse JSON data from request body
     request_json = req.get_json()
 
@@ -95,9 +124,10 @@ def addMatch(req: https_fn.Request) -> https_fn.Response:
         if "match_id" not in match_info.to_dict() and not getPlayerDetailsFromFirestore(firestore_client,match_info.player_b_id):
             return https_fn.Response(f"Player B (ID= {match_info.player_b_id}) does not exist", status=400)
         # Add match
-        addMatchToFirestore(firestore_client.transaction(), firestore_client, match_info)
+        new_match = addMatchToFirestore(firestore_client.transaction(), firestore_client, match_info)
 
-        return https_fn.Response("Match added successfully")
+        logger.info(f"Match {new_match.match_id} added successfully.")
+        return https_fn.Response(json.dumps({"match": new_match.to_dict()}), status=200, content_type="application/json")
 
     except Exception as e:
         logging.error(f"Error adding match: {str(e)}")
@@ -107,6 +137,19 @@ def addMatch(req: https_fn.Request) -> https_fn.Response:
 
 @https_fn.on_request()
 def getPlayerDetails(req: https_fn.Request) -> https_fn.Response:
+    """
+    Retrieves details of a specific player from the Firestore database.
+
+    Accepts a JSON payload in an HTTP POST request with either 'player_id', 'name', or
+    'email' fields to specify the player to be retrieved.
+
+    Args:
+        req (https_fn.Request): The request object containing JSON data to identify the player.
+
+    Returns:
+        https_fn.Response: A JSON response containing the requested player's details, or
+        a 'Player not found' message with a 404 status code if the player does not exist.
+    """
     request_json = req.get_json()
 
     player_id = request_json.get("player_id")
@@ -120,3 +163,100 @@ def getPlayerDetails(req: https_fn.Request) -> https_fn.Response:
         return https_fn.Response(json.dumps(player_details), status=200)
     else:
         return https_fn.Response("Player not found", status=404)
+
+
+@https_fn.on_request()
+def deletePlayer(req: https_fn.Request) -> https_fn.Response:
+    """
+    Deletes a player from the Firestore database.
+
+    Requires a JSON payload in an HTTP POST request with the 'player_id' field
+    to specify which player to delete.
+
+    Args:
+        req (https_fn.Request): The request object containing JSON data with 'player_id'.
+
+    Returns:
+        https_fn.Response: A confirmation message upon successful deletion, or an error
+        message with an appropriate HTTP status code on failure.
+    """
+    data = req.get_json()
+    player_id = data.get("player_id") if data else None
+    logger.info(f"deletePlayer called for id={player_id}")
+
+    if not player_id:
+        return https_fn.Response("Player ID is required", status=400)
+
+    firestore_client: google.cloud.firestore.Client = firestore.client()
+    try:
+        deletePlayerFromFirestore(firestore_client, player_id)
+        return https_fn.Response(f"Player {player_id} deleted successfully.", status=200)
+    except Exception as e:
+        return https_fn.Response(f"Error: {str(e)}", status=500)
+
+
+@https_fn.on_request()
+def deleteMatch(req: https_fn.Request) -> https_fn.Response:
+    """
+    Deletes a match record from the Firestore database.
+
+    Requires a JSON payload in an HTTP POST request with the 'match_id' field
+    to specify which match to delete.
+
+    Args:
+        req (https_fn.Request): The request object containing JSON data with 'match_id'.
+
+    Returns:
+        https_fn.Response: A confirmation message upon successful deletion, or an error
+        message with an appropriate HTTP status code on failure.
+    """
+    data = req.get_json()
+    match_id = data.get("match_id") if data else None
+    logger.info(f"deleteMatch called for id={match_id}")
+
+    if not match_id:
+        return https_fn.Response("Match ID is required", status=400)
+
+    firestore_client: google.cloud.firestore.Client = firestore.client()
+    try:
+        deleteMatchFromFirestore(firestore_client, match_id)
+        return https_fn.Response(f"Match {match_id} deleted successfully.", status=200)
+    except Exception as e:
+        return https_fn.Response(f"Error: {str(e)}", status=500)
+
+
+@https_fn.on_request()
+def getMatchDetails(req: https_fn.Request) -> https_fn.Response:
+    """
+    Retrieves details of a specific match or matches involving a specific player
+    from the Firestore database.
+
+    Accepts a JSON payload in an HTTP POST request with either 'match_id' or
+    'player_id' fields to specify the match(es) to be retrieved.
+
+    Args:
+        req (https_fn.Request): The request object containing JSON data to identify the match.
+
+    Returns:
+        https_fn.Response: A JSON response containing the requested match's details, or
+        a 'No matches found' message with a 404 status code if no matches meet the criteria.
+    """
+    request_json = req.get_json()
+    logger.info(f"getMatchDetails called with {request_json}")
+    match_id = request_json.get("match_id")
+    player_id = request_json.get("player_id") 
+
+    if not match_id and not player_id:
+        return https_fn.Response("Match ID or Player ID is required", status=400)
+
+    logger.debug(f"{match_id}:{player_id}")
+    firestore_client: google.cloud.firestore.Client = firestore.client()
+    match_details = getMatchDetailsFromFirestore(firestore_client, match_id, player_id)
+
+    if match_details:
+        return https_fn.Response(json.dumps(match_details), status=200)
+    else:
+        return https_fn.Response("No matches found", status=404)
+
+
+

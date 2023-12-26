@@ -2,6 +2,7 @@ from firebase_admin import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 
 import logging
+import logger
 
 from player import Player
 from match import Match
@@ -24,11 +25,10 @@ def writePlayerToFirestore(transaction,firestore_client, player:Player):
 
     # Create a new player document with an auto-generated ID
     new_player_ref = players_collection.document()
-    new_player_id = new_player_ref.id
-    new_player = {"id": new_player_id, "name": player.name, "email": player.email, "DOB": player.dob, "level": player.level}
-    
-    # Set the new player data in the transaction
-    transaction.set(new_player_ref, new_player)
+    player.id = new_player_ref.id  # Update the player's id
+    transaction.set(new_player_ref, player.to_dict())
+
+    return player  # Return the updated player object
 
 
 def getPlayerDetailsFromFirestore(firestore_client, player_id=None, name=None, email=None):
@@ -78,6 +78,8 @@ def addMatchToFirestore(transaction, firestore_client, match_info:Match):
             new_match_ref = matches_collection.document()
             match_info.match_id = new_match_ref.id
             transaction.set(new_match_ref, match_info.to_dict())
+        
+        return  match_info
 
             # Check if match already exists
             ###### matches_collection = firestore_client.collection(MATCHES_COLLECTIONS)
@@ -97,3 +99,29 @@ def addMatchToFirestore(transaction, firestore_client, match_info:Match):
             ######     match_info["match_id"] = new_match_ref.id
             ######     # Set the new match data in the transaction
             ######     transaction.set(new_match_ref, match_info)
+
+def deletePlayerFromFirestore(firestore_client, player_id):
+    player_ref = firestore_client.collection(PLAYERS_COLLECTIONS).document(player_id)
+    player_ref.delete()
+
+def deleteMatchFromFirestore(firestore_client, match_id):
+    match_ref = firestore_client.collection(MATCHES_COLLECTIONS).document(match_id)
+    match_ref.delete()
+
+def getMatchDetailsFromFirestore(firestore_client, match_id=None, player_id=None):
+    matches_collection = firestore_client.collection(MATCHES_COLLECTIONS)
+
+    if match_id:
+        query = matches_collection.where('match_id', '==', match_id)
+    elif player_id:
+        query = matches_collection.where('player_a_id', '==', player_id).where('player_b_id', '==', player_id)
+    else:
+        return None  # No valid search criterion provided
+    
+    logger.debug(f"Query:{query}")
+
+    results = query.stream()
+    matches = [doc.to_dict() for doc in results]
+    logger.debug(f"Matches from firestore:{matches}")
+
+    return matches if matches else None  # Return None if no matches found

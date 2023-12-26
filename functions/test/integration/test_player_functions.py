@@ -30,3 +30,10 @@ def test_add_and_get_player():
     assert player_details["email"] == "janedoe@example.com"
     assert player_details["name"] == "Jane Doe"
 
+def test_delete_player():
+    # Assuming player_id is known
+    player_id = "player1"
+    response = requests.post(f"{BASE_URL}/deletePlayer", data={"player_id": player_id})
+    assert response.status_code == 200
+
+
