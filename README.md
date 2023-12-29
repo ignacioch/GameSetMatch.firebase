@@ -42,7 +42,11 @@ To run tests, use the following command:
 pytest
 ```
 
-Ensure you have the test dependencies installed and Firebase emulators running if necessary.
+Ensure you have the test dependencies installed(step 3 above) and Firebase emulators running if necessary. To start the emulator run : 
+
+```bash
+firebase emulators:start --project gamesetmatch-ef350
+```
 
 ## Example requests
 
