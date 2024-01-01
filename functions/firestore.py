@@ -112,16 +112,20 @@ def getMatchDetailsFromFirestore(firestore_client, match_id=None, player_id=None
     matches_collection = firestore_client.collection(MATCHES_COLLECTIONS)
 
     if match_id:
+        # Query for a specific match by match_id
         query = matches_collection.where('match_id', '==', match_id)
     elif player_id:
+        # Query for matches involving the specified player
         query = matches_collection.where('player_a_id', '==', player_id).where('player_b_id', '==', player_id)
     else:
-        return None  # No valid search criterion provided
-    
-    logger.debug(f"Query:{query}")
+        # If no criteria provided, select all matches
+        query = matches_collection.order_by('date', direction=firestore.Query.DESCENDING)
+
+    logger.debug(f"Query: {query}")
 
     results = query.stream()
     matches = [doc.to_dict() for doc in results]
-    logger.debug(f"Matches from firestore:{matches}")
+    logger.debug(f"Matches from Firestore: {matches}")
 
     return matches if matches else None  # Return None if no matches found
+

@@ -224,32 +224,22 @@ def deleteMatch(req: https_fn.Request) -> https_fn.Response:
     except Exception as e:
         return https_fn.Response(f"Error: {str(e)}", status=500)
 
-
 @https_fn.on_request()
 def getMatchDetails(req: https_fn.Request) -> https_fn.Response:
     """
     Retrieves details of a specific match or matches involving a specific player
     from the Firestore database.
 
-    Accepts a JSON payload in an HTTP POST request with either 'match_id' or
-    'player_id' fields to specify the match(es) to be retrieved.
-
-    Args:
-        req (https_fn.Request): The request object containing JSON data to identify the match.
+    Accepts query parameters in an HTTP GET request with 'match_id' or 'player_id'
+    fields to specify the match(es) to be retrieved.
 
     Returns:
         https_fn.Response: A JSON response containing the requested match's details, or
         a 'No matches found' message with a 404 status code if no matches meet the criteria.
     """
-    request_json = req.get_json()
-    logger.info(f"getMatchDetails called with {request_json}")
-    match_id = request_json.get("match_id")
-    player_id = request_json.get("player_id") 
+    match_id = req.args.get("match_id")
+    player_id = req.args.get("player_id")
 
-    if not match_id and not player_id:
-        return https_fn.Response("Match ID or Player ID is required", status=400)
-
-    logger.debug(f"{match_id}:{player_id}")
     firestore_client: google.cloud.firestore.Client = firestore.client()
     match_details = getMatchDetailsFromFirestore(firestore_client, match_id, player_id)
 
@@ -257,6 +247,7 @@ def getMatchDetails(req: https_fn.Request) -> https_fn.Response:
         return https_fn.Response(json.dumps(match_details), status=200)
     else:
         return https_fn.Response("No matches found", status=404)
+
 
 
 

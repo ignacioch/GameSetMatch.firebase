@@ -77,3 +77,14 @@ curl -X POST [API_ENDPOINT]/deletePlayer -H "Content-Type: application/json" -d 
 ```bash
 curl -X POST [API_ENDPOINT]/deleteMatch -H "Content-Type: application/json" -d '{"match_id": "1"}'
 ```
+
+## Deployment
+
+Make your changes and then run :
+
+```bash
+firebase deploy --only functions
+```
+
+Once your functions are being deployed - you can send `curl` requests. For those to be publicly available though, you need to go on [Google Cloud Console](https://console.cloud.google.com/functions/list?env=gen2&project=gamesetmatch-ef350&tab=source) > Permissions > and add `allUsers` and `Cloud Function Invoker`.
+
