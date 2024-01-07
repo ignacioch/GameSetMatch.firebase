@@ -19,11 +19,11 @@ import logger
 from firestore import writePlayerToFirestore,addMatchToFirestore,getPlayerDetailsFromFirestore,deletePlayerFromFirestore,deleteMatchFromFirestore,getMatchDetailsFromFirestore
 
 app = initialize_app(options={"projectId":"gamesetmatch-ef350"})
-#
-#
-# @https_fn.on_request()
-# def on_request_example(req: https_fn.Request) -> https_fn.Response:
-#     return https_fn.Response("Hello world!")
+
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)  # Set to DEBUG or INFO as needed
 
 @https_fn.on_request()
 def registerPlayer(req: https_fn.Request) -> https_fn.Response:
@@ -92,11 +92,9 @@ def addMatch(req: https_fn.Request) -> https_fn.Response:
     """
     # Parse JSON data from request body
     request_json = req.get_json()
-
     """Add match data to the Firestore database."""
     try:
         # Extracting match data from request
-        request_json = req.get_json()
         logger.debug(f"Incoming request_raw={request_json}")
         if not request_json:
             return https_fn.Response("Invalid request", status=400)
@@ -106,7 +104,7 @@ def addMatch(req: https_fn.Request) -> https_fn.Response:
         player_b_id = request_json.get("player_b_id")
         score = request_json.get("score")
         match_id = request_json.get("match_id")  # Can be None
-        match_date = request_json.get("date")
+        match_date = request_json.get("match_date")
         location = request_json.get("location")
 
         match_info = Match(player_a_id, player_b_id, score, match_date, location, match_id)
@@ -237,13 +235,14 @@ def getMatchDetails(req: https_fn.Request) -> https_fn.Response:
         https_fn.Response: A JSON response containing the requested match's details, or
         a 'No matches found' message with a 404 status code if no matches meet the criteria.
     """
+    logger.debug("removeme")
     match_id = req.args.get("match_id")
     player_id = req.args.get("player_id")
-
+    logger.debug(f"getMatchDetails:match_id={match_id}:player_id:{player_id}")
     firestore_client: google.cloud.firestore.Client = firestore.client()
     match_details = getMatchDetailsFromFirestore(firestore_client, match_id, player_id)
 
-    if match_details:
+    if match_details or (player_id is None and match_id is None):
         return https_fn.Response(json.dumps(match_details), status=200)
     else:
         return https_fn.Response("No matches found", status=404)
