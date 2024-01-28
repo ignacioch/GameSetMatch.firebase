@@ -2,10 +2,10 @@ from firebase_admin import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 
 import logging
-import logger
+#import .logger
 
-from player import Player
-from match import Match
+from .player import Player
+from .match import Match
 
 MATCHES_COLLECTIONS = "matches"
 PLAYERS_COLLECTIONS = "players"
