@@ -78,6 +78,12 @@ curl -X POST [API_ENDPOINT]/deletePlayer -H "Content-Type: application/json" -d 
 curl -X POST [API_ENDPOINT]/deleteMatch -H "Content-Type: application/json" -d '{"match_id": "1"}'
 ```
 
+You can run the same commands in the `test/manual` folder.
+
+```bash
+deleteMatch.sh [--local] <args>
+```
+
 ## Deployment
 
 Make your changes and then run :

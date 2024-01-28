@@ -1,11 +1,22 @@
 #!/bin/bash
 
 # URLs of the Cloud Functions
-REGISTER_PLAYER_URL="http://localhost:5001/gamesetmatch-ef350/us-central1/registerPlayer"
-ADD_MATCH_URL="http://localhost:5001/gamesetmatch-ef350/us-central1/addMatch"
-GET_MATCH_DETAILS_URL="http://localhost:5001/gamesetmatch-ef350/us-central1/getMatchDetails"
-DELETE_PLAYER_URL="http://localhost:5001/gamesetmatch-ef350/us-central1/deletePlayer"
-DELETE_MATCH_URL="http://localhost:5001/gamesetmatch-ef350/us-central1/deleteMatch"
+LOCAL_BASE_URL="http://localhost:5001/gamesetmatch-ef350/us-central1/"
+REMOTE_BASE_URL="https://us-central1-gamesetmatch-ef350.cloudfunctions.net/"
+
+# Check if the first argument is --local
+if [ "$1" == "--local" ]; then
+    URL="$LOCAL_BASE_URL"
+else
+    URL="$REMOTE_BASE_URL"
+fi
+
+# Concatenate the base URL with the specific endpoints
+REGISTER_PLAYER_URL="${LOCAL_BASE_URL}registerPlayer"
+ADD_MATCH_URL="${LOCAL_BASE_URL}addMatch"
+GET_MATCH_DETAILS_URL="${LOCAL_BASE_URL}getMatchDetails"
+DELETE_PLAYER_URL="${LOCAL_BASE_URL}deletePlayer"
+DELETE_MATCH_URL="${LOCAL_BASE_URL}deleteMatch"
 
 # Function to check response status
 check_status() {
