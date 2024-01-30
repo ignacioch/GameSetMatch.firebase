@@ -7,8 +7,9 @@ import logging
 from .player import Player
 from .match import Match
 
-MATCHES_COLLECTIONS = "matches"
-PLAYERS_COLLECTIONS = "players"
+MATCHES_COLLECTION = "matches"
+PLAYERS_COLLECTION = "players"
+LEAGUES_COLLECTION  = "leagues" 
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # Set to DEBUG or INFO as needed
@@ -18,7 +19,7 @@ logger.setLevel(logging.DEBUG)  # Set to DEBUG or INFO as needed
 '''
 @firestore.transactional
 def writePlayerToFirestore(transaction,firestore_client, player:Player):
-    players_collection = firestore_client.collection(PLAYERS_COLLECTIONS)
+    players_collection = firestore_client.collection(PLAYERS_COLLECTION)
     #query = players_collection.where(field_path="email", op_string="==", value=email)
     query = players_collection.where(filter=FieldFilter("email","==",player.email))
     results = query.get(transaction=transaction)
@@ -35,7 +36,7 @@ def writePlayerToFirestore(transaction,firestore_client, player:Player):
 
 
 def getPlayerDetailsFromFirestore(firestore_client, player_id=None, name=None, email=None):
-    players_collection = firestore_client.collection(PLAYERS_COLLECTIONS)
+    players_collection = firestore_client.collection(PLAYERS_COLLECTION)
     query = players_collection.limit(1)  # Adjust the limit as needed
 
     if player_id:
@@ -64,7 +65,7 @@ def addMatchToFirestore(transaction, firestore_client, match_info:Match):
         location = match_info.location
 
         match_id = match_info.match_id #optional
-        matches_collection = firestore_client.collection(MATCHES_COLLECTIONS)
+        matches_collection = firestore_client.collection(MATCHES_COLLECTION)
 
         if match_id:
             match_doc = matches_collection.document(match_id).get(transaction=transaction)
@@ -87,15 +88,15 @@ def addMatchToFirestore(transaction, firestore_client, match_info:Match):
         return  match_info
 
 def deletePlayerFromFirestore(firestore_client, player_id):
-    player_ref = firestore_client.collection(PLAYERS_COLLECTIONS).document(player_id)
+    player_ref = firestore_client.collection(PLAYERS_COLLECTION).document(player_id)
     player_ref.delete()
 
 def deleteMatchFromFirestore(firestore_client, match_id):
-    match_ref = firestore_client.collection(MATCHES_COLLECTIONS).document(match_id)
+    match_ref = firestore_client.collection(MATCHES_COLLECTION).document(match_id)
     match_ref.delete()
 
 def getMatchDetailsFromFirestore(firestore_client, match_id=None, player_id=None):
-    matches_collection = firestore_client.collection(MATCHES_COLLECTIONS)
+    matches_collection = firestore_client.collection(MATCHES_COLLECTION)
     logger.debug(f"getMatchDetailsFromFirestore:match_id={match_id}:player_id:{player_id}")
     if match_id:
         # Query for a specific match by match_id
@@ -115,4 +116,51 @@ def getMatchDetailsFromFirestore(firestore_client, match_id=None, player_id=None
     logger.debug(f"Matches from Firestore: {matches}")
 
     return matches
+
+def addPlayerToLeagueFirestore(player_id, league_id):
+    firestore_client = firestore.client()
+
+    # Transaction to ensure atomicity of operations
+    @firestore.transactional
+    def update_in_transaction(transaction, player_ref, league_ref):
+        # Check if player exists and update their leagues list
+        player_doc = player_ref.get(transaction=transaction)
+        if player_doc.exists:
+            player_data = player_doc.to_dict()
+            player_leagues = player_data.get("leagues", [])
+            if league_id not in player_leagues:
+                player_leagues.append(league_id)
+                transaction.update(player_ref, {"leagues": player_leagues})
+            else:
+                raise ValueError(f"Player already in league {league_id}")
+        else:
+            raise ValueError("Player not found")
+
+        # Update the league's unallocated players
+        league_doc = league_ref.get(transaction=transaction)
+        if league_doc.exists:
+            league_data = league_doc.to_dict()
+            unallocated_players = league_data.get("unallocatedPlayers", [])
+            if player_id not in unallocated_players:
+                unallocated_players.append(player_id)
+                transaction.update(league_ref, {"unallocatedPlayers": unallocated_players})
+            # No error if player is already in unallocatedPlayers
+        else:
+            raise ValueError("League not found")
+
+    # References to the player and league documents
+    player_ref = firestore_client.collection(PLAYERS_COLLECTION).document(player_id)
+    league_ref = firestore_client.collection(LEAGUES_COLLECTION).document(league_id)
+
+    # Execute the transaction
+    transaction = firestore_client.transaction()
+    update_in_transaction(transaction, player_ref, league_ref)
+
+    # Return updated league information
+    updated_league_doc = league_ref.get()
+    if updated_league_doc.exists:
+        return updated_league_doc.to_dict()
+    else:
+        raise ValueError("Failed to retrieve updated league info")
+
 

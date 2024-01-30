@@ -16,7 +16,7 @@ import json
 from .player import Player
 from .match import Match
 #import .logger
-from .firestore import writePlayerToFirestore,addMatchToFirestore,getPlayerDetailsFromFirestore,deletePlayerFromFirestore,deleteMatchFromFirestore,getMatchDetailsFromFirestore
+from .firestore import writePlayerToFirestore,addMatchToFirestore,getPlayerDetailsFromFirestore,deletePlayerFromFirestore,deleteMatchFromFirestore,getMatchDetailsFromFirestore,addPlayerToLeagueFirestore
 
 app = initialize_app(options={"projectId":"gamesetmatch-ef350"})
 
@@ -227,7 +227,7 @@ def getMatchDetails(req: https_fn.Request) -> https_fn.Response:
     logger.debug("removeme")
     match_id = req.args.get("match_id")
     player_id = req.args.get("player_id")
-    logger.debug(f"getMatchDetails:match_id={match_id}:player_id:{player_id}")
+    logger.debug(f"getMatchDetails:match_id={match_id}:player_id={player_id}")
     firestore_client: google.cloud.firestore.Client = firestore.client()
     match_details = getMatchDetailsFromFirestore(firestore_client, match_id, player_id)
 
@@ -235,6 +235,21 @@ def getMatchDetails(req: https_fn.Request) -> https_fn.Response:
         return https_fn.Response(json.dumps(match_details), status=200)
     else:
         return https_fn.Response("No matches found", status=404)
+
+def addPlayerToLeague(req: https_fn.Request) -> https_fn.Response:
+    request_json = req.get_json()
+    player_id = request_json.get("player_id")
+    league_id = request_json.get("league_id")
+
+    if not player_id or not league_id:
+        return https_fn.Response("Player ID and League ID are required", status=400)
+
+    try:
+        league_info = addPlayerToLeagueFirestore(player_id, league_id)
+        return https_fn.Response(json.dumps({"league_info": league_info}), status=200, content_type="application/json")
+    except ValueError as e:
+        return https_fn.Response(str(e), status=400)
+
 
 
 

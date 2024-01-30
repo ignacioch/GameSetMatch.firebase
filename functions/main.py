@@ -113,3 +113,24 @@ def deleteMatch(req: https_fn.Request) -> https_fn.Response:
         message with an appropriate HTTP status code on failure.
     """
     return api.deleteMatch(req)
+
+
+# In main.py
+@https_fn.on_request()
+def addPlayerToLeagueEndpoint(req: https_fn.Request) -> https_fn.Response:
+    """
+    Endpoint to add a player to a league.
+
+    Expects a POST request with a JSON payload containing 'player_id' and 'league_id'.
+    Adds the player to the specified league and updates the league's list of players.
+
+    Args:
+        req (https_fn.Request): The request object containing JSON data.
+
+    Returns:
+        https_fn.Response: A JSON response confirming the addition of the player to the league,
+        or an error message with an appropriate HTTP status code on failure.
+    """
+    return api.addPlayerToLeague(req)
+
+
