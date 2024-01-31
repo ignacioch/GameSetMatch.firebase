@@ -16,7 +16,7 @@ import json
 from .player import Player
 from .match import Match
 #import .logger
-from .firestore import writePlayerToFirestore,addMatchToFirestore,getPlayerDetailsFromFirestore,deletePlayerFromFirestore,deleteMatchFromFirestore,getMatchDetailsFromFirestore,addPlayerToLeagueFirestore
+from .firestore import writePlayerToFirestore,addMatchToFirestore,getPlayerDetailsFromFirestore,deletePlayerFromFirestore,deleteMatchFromFirestore,getMatchDetailsFromFirestore,addPlayerToLeagueFirestore,createLeagueFirestore
 
 app = initialize_app(options={"projectId":"gamesetmatch-ef350"})
 
@@ -246,6 +246,21 @@ def addPlayerToLeague(req: https_fn.Request) -> https_fn.Response:
 
     try:
         league_info = addPlayerToLeagueFirestore(player_id, league_id)
+        return https_fn.Response(json.dumps({"league_info": league_info}), status=200, content_type="application/json")
+    except ValueError as e:
+        return https_fn.Response(str(e), status=400)
+
+
+def createLeague(req: https_fn.Request) -> https_fn.Response:
+    request_json = req.get_json()
+    league_name = request_json.get("league_name")
+    location = request_json.get("location")
+
+    if not league_name or not location:
+        return https_fn.Response("League name and location are required", status=400)
+
+    try:
+        league_info = createLeagueFirestore(league_name, location)
         return https_fn.Response(json.dumps({"league_info": league_info}), status=200, content_type="application/json")
     except ValueError as e:
         return https_fn.Response(str(e), status=400)

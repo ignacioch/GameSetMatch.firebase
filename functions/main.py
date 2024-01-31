@@ -117,7 +117,7 @@ def deleteMatch(req: https_fn.Request) -> https_fn.Response:
 
 # In main.py
 @https_fn.on_request()
-def addPlayerToLeagueEndpoint(req: https_fn.Request) -> https_fn.Response:
+def addPlayerToLeague(req: https_fn.Request) -> https_fn.Response:
     """
     Endpoint to add a player to a league.
 
@@ -132,5 +132,12 @@ def addPlayerToLeagueEndpoint(req: https_fn.Request) -> https_fn.Response:
         or an error message with an appropriate HTTP status code on failure.
     """
     return api.addPlayerToLeague(req)
+
+@https_fn.on_request()
+    """
+    Endpoint to create a league. This is meant to be called for just creating a new League
+    """
+def createLeague(req: https_fn.Request) -> https_fn.Response:
+    return api.createLeague(req)
 
 
