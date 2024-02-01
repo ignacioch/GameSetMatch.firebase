@@ -1,7 +1,9 @@
 from firebase_admin import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 
+from datetime import datetime
 import logging
+
 #import .logger
 
 from .player import Player
@@ -163,9 +165,13 @@ def addPlayerToLeagueFirestore(player_id, league_id):
     else:
         raise ValueError("Failed to retrieve updated league info")
 
-def createLeagueFirestore(league_name, location):
+def createLeagueFirestore(league_name, location, start_date_str, end_date_str):
     firestore_client = firestore.client()
     league_ref = firestore_client.collection("Leagues").document()
+
+    # Convert date strings to datetime.date objects
+    start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+    end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
 
     new_league_data = {
         "league_name": league_name,
@@ -173,7 +179,10 @@ def createLeagueFirestore(league_name, location):
         "running": False,
         "current_round": 0,
         "unallocatedPlayers": [],
-        # You can add more initial fields as needed
+        "dates": {
+            "start": start_date,
+            "end": end_date
+        }
     }
 
     league_ref.set(new_league_data)

@@ -255,12 +255,14 @@ def createLeague(req: https_fn.Request) -> https_fn.Response:
     request_json = req.get_json()
     league_name = request_json.get("league_name")
     location = request_json.get("location")
+    start_date = request_json.get("start_date")  # format: "YYYY-MM-DD"
+    end_date = request_json.get("end_date")      # format: "YYYY-MM-DD"
 
     if not league_name or not location:
         return https_fn.Response("League name and location are required", status=400)
 
     try:
-        league_info = createLeagueFirestore(league_name, location)
+        league_info = createLeagueFirestore(league_name, location, start_date, end_date)
         return https_fn.Response(json.dumps({"league_info": league_info}), status=200, content_type="application/json")
     except ValueError as e:
         return https_fn.Response(str(e), status=400)
