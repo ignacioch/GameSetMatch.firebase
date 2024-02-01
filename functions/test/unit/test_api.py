@@ -31,7 +31,7 @@ def test_add_player_to_league(mocker, input_data, expected_status, expected_resp
     response = api.addPlayerToLeague(mock_request)
 
     # Assertions
-    if side_effect is None:
+    if side_effect != "No Call":
         mock_addPlayerToLeagueFirestore.assert_called_once_with(input_data["player_id"], input_data["league_id"])
     assert response.status_code == expected_status
     if expected_status == 200:
@@ -73,7 +73,7 @@ def test_create_league(mocker, input_data, expected_status, expected_response, s
     response = api.createLeague(mock_request)
 
     # Assertions
-    if side_effect is None:
+    if side_effect != "No Call":
         mock_createLeagueFirestore.assert_called_once_with(input_data["league_name"], input_data["location"])
     assert response.status_code == expected_status
     if expected_status == 200:
