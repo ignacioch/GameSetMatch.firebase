@@ -134,10 +134,10 @@ def addPlayerToLeague(req: https_fn.Request) -> https_fn.Response:
     return api.addPlayerToLeague(req)
 
 @https_fn.on_request()
+def createLeague(req: https_fn.Request) -> https_fn.Response:
     """
     Endpoint to create a league. This is meant to be called for just creating a new League
     """
-def createLeague(req: https_fn.Request) -> https_fn.Response:
     return api.createLeague(req)
 
 
