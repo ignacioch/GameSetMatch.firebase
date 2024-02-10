@@ -12,11 +12,11 @@ else
 fi
 
 # Concatenate the base URL with the specific endpoints
-REGISTER_PLAYER_URL="${LOCAL_BASE_URL}registerPlayer"
-ADD_MATCH_URL="${LOCAL_BASE_URL}addMatch"
-GET_MATCH_DETAILS_URL="${LOCAL_BASE_URL}getMatchDetails"
-DELETE_PLAYER_URL="${LOCAL_BASE_URL}deletePlayer"
-DELETE_MATCH_URL="${LOCAL_BASE_URL}deleteMatch"
+REGISTER_PLAYER_URL="${URL}registerPlayer"
+ADD_MATCH_URL="${URL}addMatch"
+GET_MATCH_DETAILS_URL="${URL}getMatchDetails"
+DELETE_PLAYER_URL="${URL}deletePlayer"
+DELETE_MATCH_URL="${URL}deleteMatch"
 
 # Function to check response status
 check_status() {
@@ -26,18 +26,21 @@ check_status() {
     fi
 }
 
+# Example areas as a JSON array (modify as needed)
+AREAS_JSON='["area1","area2"]'
+
 # Register two players
-response=$(curl -s -w "%{http_code}" -o response.json -X POST "$REGISTER_PLAYER_URL" -H "Content-Type: application/json" -d '{"name": "John Doe", "email": "john@example.com", "DOB": "1990-01-01", "level": "beginner"}')
+response=$(curl -s -w "%{http_code}" -o response.json -X POST "$REGISTER_PLAYER_URL" -H "Content-Type: application/json" -d "{\"name\": \"John Doe\", \"email\": \"john@example.com\", \"DOB\": \"1990-01-01\", \"level\": \"beginner\", \"areas\": $AREAS_JSON}")
 echo "Response from registering Player 1: $(cat response.json)"
 check_status "$response"
 player1_id=$(jq -r '.player.id' response.json)
 echo "Player 1 Registered with ID: $player1_id"
 
-response=$(curl -s -w "%{http_code}" -o response.json -X POST "$REGISTER_PLAYER_URL" -H "Content-Type: application/json" -d '{"name": "Jane Doe", "email": "jane@example.com", "DOB": "1992-02-02", "level": "intermediate"}')
+response=$(curl -s -w "%{http_code}" -o response.json -X POST "$REGISTER_PLAYER_URL" -H "Content-Type: application/json" -d "{\"name\": \"Jane Doe\", \"email\": \"jane@example.com\", \"DOB\": \"1992-02-02\", \"level\": \"intermediate\", \"areas\": $AREAS_JSON}")
 echo "Response from registering Player 2: $(cat response.json)"
 check_status "$response"
 player2_id=$(jq -r '.player.id' response.json)
-echo "Player 1 Registered with ID: $player2_id"
+echo "Player 2 Registered with ID: $player2_id"
 
 # Add a match between them
 response=$(curl -s -w "%{http_code}" -o response.json -X POST "$ADD_MATCH_URL" -H "Content-Type: application/json" -d "{\"player_a_id\": \"$player1_id\", \"player_b_id\": \"$player2_id\", \"score\": \"6-3, 6-4\", \"date\": \"2023-03-28\", \"location\": \"Court 1\"}")

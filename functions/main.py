@@ -49,16 +49,21 @@ def registerPlayer(req: https_fn.Request) -> https_fn.Response:
     Registers a new player and adds their information to the Firestore database.
     
     This function parses JSON data from the incoming HTTP POST request and creates
-    a new player entry in Firestore. It requires 'name', 'email', 'DOB', and 'level'
-    fields in the JSON payload.
+    a new player entry in Firestore. The JSON payload must include the following fields:
+    - name (str): The name of the player.
+    - email (str): The email of the player.
+    - DOB (str): The date of birth of the player, in "YYYY-MM-DD" format.
+    - level (str): The skill level of the player.
+    - areas (list of str, optional): An array of strings, each representing an area ID where the player is interested in participating.
 
     Args:
-        req (https_fn.Request): The request object containing JSON data.
+        req (https_fn.Request): The request object containing JSON data with the player's information.
 
     Returns:
         https_fn.Response: A JSON response containing the newly created player's data,
         including their unique Firestore ID, or an error message with an appropriate
-        HTTP status code on failure.
+        HTTP status code on failure. The response includes the player's name, email,
+        date of birth (DOB), level, and areas of interest.
     """
     return api.registerPlayer(req)
 
@@ -139,5 +144,20 @@ def createLeague(req: https_fn.Request) -> https_fn.Response:
     Endpoint to create a league. This is meant to be called for just creating a new League
     """
     return api.createLeague(req)
+
+@https_fn.on_request()
+def startARound(req: https_fn.Request) -> https_fn.Response:
+    """
+    Starts a new round in a league, creating groups from unallocated players.
+
+    Args:
+        req (https_fn.Request): The request object containing JSON data with 'league_id'.
+
+    Returns:
+        https_fn.Response: A confirmation message upon successful update or an error
+        message with an appropriate HTTP status code on failure.
+    """
+    return api.startARound(req)
+
 
 

@@ -28,16 +28,21 @@ def registerPlayer(req: https_fn.Request) -> https_fn.Response:
     Registers a new player and adds their information to the Firestore database.
     
     This function parses JSON data from the incoming HTTP POST request and creates
-    a new player entry in Firestore. It requires 'name', 'email', 'DOB', and 'level'
-    fields in the JSON payload.
+    a new player entry in Firestore. The JSON payload must include the following fields:
+    - name (str): The name of the player.
+    - email (str): The email of the player.
+    - DOB (str): The date of birth of the player, in "YYYY-MM-DD" format.
+    - level (str): The skill level of the player.
+    - areas (list of str, optional): An array of strings, each representing an area ID where the player is interested in participating.
 
     Args:
-        req (https_fn.Request): The request object containing JSON data.
+        req (https_fn.Request): The request object containing JSON data with the player's information.
 
     Returns:
         https_fn.Response: A JSON response containing the newly created player's data,
         including their unique Firestore ID, or an error message with an appropriate
-        HTTP status code on failure.
+        HTTP status code on failure. The response includes the player's name, email,
+        date of birth (DOB), level, and areas of interest.
     """
 
     # Parse JSON data from request body
@@ -50,23 +55,24 @@ def registerPlayer(req: https_fn.Request) -> https_fn.Response:
     email = request_json["email"]
     dob = request_json["DOB"]
     level = request_json["level"]
+    areas = request_json.get("areas")  # Expecting an array of area IDs
 
-    player = Player(name, email, dob, level)
+    player = Player(name, email, dob, level, areas)
     logger.info(f"Incoming request={player}")
     
     # Check for missing parameters
-    if not all([name, email, dob, level]):
+    if not all([name, email, dob, level]) or 'areas' not in request_json:
         return https_fn.Response("Required parameters NOT provided", status=400)
 
     firestore_client: google.cloud.firestore.Client = firestore.client()
             
     try:
-        player = Player(name, email, dob, level)
         saved_player = writePlayerToFirestore(firestore_client.transaction(), firestore_client, player)
         logger.info(f"Player {saved_player.id}:{saved_player.name} added successfully.")
         return https_fn.Response(json.dumps({"player": saved_player.to_dict()}), status=200, content_type="application/json")
     except ValueError as e:
         return https_fn.Response(str(e), status=400)
+
 
 def addMatch(req: https_fn.Request) -> https_fn.Response:
     """
@@ -266,6 +272,32 @@ def createLeague(req: https_fn.Request) -> https_fn.Response:
         return https_fn.Response(json.dumps({"league_info": league_info}), status=200, content_type="application/json")
     except ValueError as e:
         return https_fn.Response(str(e), status=400)
+
+def startARound(req: https_fn.Request) -> https_fn.Response:
+    """
+    API endpoint to start a new round in a league.
+
+    The function fetches the league document based on the provided league_id,
+    checks for unallocated players, and updates the league's status and groups.
+    
+    Args:
+        req (https_fn.Request): The request object containing JSON data.
+
+    Returns:
+        https_fn.Response: A JSON response indicating success or failure.
+    """
+    request_json = req.get_json()
+    league_id = request_json.get("league_id")
+
+    if not league_id:
+        return https_fn.Response("League ID is required", status=400)
+
+    try:
+        update_info = startRoundInLeagueFirestore(league_id)
+        return https_fn.Response(json.dumps(update_info), status=200, content_type="application/json")
+    except ValueError as e:
+        return https_fn.Response(str(e), status=400)
+
 
 
 

@@ -189,3 +189,43 @@ def createLeagueFirestore(league_name, location, start_date_str, end_date_str):
 
     return {**new_league_data, "league_id": league_ref.id}
 
+
+
+def startRoundInLeagueFirestore(league_id):
+    """
+    Starts a new round in the specified league by updating its status,
+    incrementing the current round, and organizing players into groups.
+
+    Args:
+        league_id (str): The ID of the league to update.
+
+    Returns:
+        dict: Information about the update.
+    """
+    firestore_client = firestore.client()
+    league_ref = firestore_client.collection(LEAGUES_COLLECTION).document(league_id)
+    league_doc = league_ref.get()
+    
+    if not league_doc.exists:
+        raise ValueError("League not found")
+
+    league_data = league_doc.to_dict()
+    unallocated_players = league_data.get("unallocatedPlayers", [])
+
+    if not unallocated_players:
+        raise ValueError("No unallocated players to start a round")
+
+    # Sort and group players - Implement your logic here
+    # Example: sorted_players = sort_and_group_players(unallocated_players)
+
+    # Update league data
+    league_data["running"] = True
+    league_data["current_round"] += 1
+    # league_data["Groups"] = sorted_players  # Update groups based on your logic
+
+    # Save the updates
+    league_ref.update(league_data)
+
+    return {"message": "Round started successfully", "league_id": league_id}
+
+

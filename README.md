@@ -50,12 +50,8 @@ firebase emulators:start --project gamesetmatch-ef350
 
 ## Example requests
 
+For details around the requests, follow the [Wiki](https://github.com/ignacioch/GameSetMatch.firebase/wiki/Requests)
 
-- Register a Player
-
-```bash
-curl -X POST [API_ENDPOINT]/registerPlayer -H "Content-Type: application/json" -d '{"name": "John Doe", "email": "john@example.com", "DOB": "1990-01-01", "level": "beginner"}'
-```
 
 - Add a Match
 ```bash
