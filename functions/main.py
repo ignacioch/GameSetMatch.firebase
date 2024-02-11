@@ -142,22 +142,49 @@ def addPlayerToLeague(req: https_fn.Request) -> https_fn.Response:
 def createLeague(req: https_fn.Request) -> https_fn.Response:
     """
     Endpoint to create a league. This is meant to be called for just creating a new League
+
+    Args:
+        req (https_fn.Request): The request object containing JSON data.
+
+    Fields:
+        - league_name (str): The name of the league to be created.
+        - area_id (str): The identifier of the area where the league is located.
+        - start_date (str): The start date of the league, in "YYYY-MM-DD" format.
+        - end_date (str): The end date of the league, in "YYYY-MM-DD" format.
+
+    Returns:
+        https_fn.Response: A JSON response containing the newly created league's details,
+        including its unique Firestore ID and other provided information,
+        or an error message with an appropriate HTTP status code on failure.
     """
     return api.createLeague(req)
 
 @https_fn.on_request()
-def startARound(req: https_fn.Request) -> https_fn.Response:
+def startRound(req: https_fn.Request) -> https_fn.Response:
     """
     Starts a new round in a league, creating groups from unallocated players.
 
+    This function initiates a new round in a league specified by the league_id in the request.
+    It checks if there are unallocated players in the league; if so, it organizes these players into groups
+    based on their levels and updates the league's current round and status to running. The function also
+    ensures that leagues without unallocated players do not start a new round and returns an error instead.
+
     Args:
-        req (https_fn.Request): The request object containing JSON data with 'league_id'.
+        req (https_fn.Request): The request object containing JSON data.
+
+    Fields:
+        - league_id (str): The unique identifier of the league for which to start a new round.
 
     Returns:
-        https_fn.Response: A confirmation message upon successful update or an error
-        message with an appropriate HTTP status code on failure.
+        https_fn.Response: A JSON response containing information about the update, including:
+        - A success message and details of the new round if the operation is successful.
+        - An error message with an appropriate HTTP status code if the operation fails,
+          such as when there are no unallocated players or the league does not exist.
+
+    Raises:
+        ValueError: If the league does not have unallocated players or if the league_id does not correspond to an existing league.
     """
-    return api.startARound(req)
+    return api.startRound(req)
 
 
 

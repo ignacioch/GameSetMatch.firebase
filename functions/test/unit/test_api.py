@@ -44,7 +44,7 @@ def test_add_player_to_league(mocker, input_data, expected_status, expected_resp
 # Sample league info to be returned on successful creation
 sample_league_info_create_league = {
     "league_name": "North City League",
-    "location": "North City",
+    "area": "North City",
     "running": False,
     "current_round": 0,
     "unallocatedPlayers": [],
@@ -53,16 +53,16 @@ sample_league_info_create_league = {
 
 # Test data for parametrization
 test_data_create_league = [
-    ({"league_name": "North City League", "location": "North City", "start_date": "2024-02-02", "end_date": "2024-04-02"}, 200, {"league_info": sample_league_info_create_league}, None),
-    ({}, 400, "League name and location are required", "No Call"), # Indicates no call to the mocked function
-    ({"league_name": "North City League", "location": "North City", "start_date": "2024-02-02", "end_date": "2024-04-02"}, 400, "Error message", ValueError("Error message")),
+    ({"league_name": "North City League", "area": "North City", "start_date": "2024-02-02", "end_date": "2024-04-02"}, 200, {"league_info": sample_league_info_create_league}, None),
+    ({}, 400, "League name and area are required", "No Call"), # Indicates no call to the mocked function
+    ({"league_name": "North City League", "area": "North City", "start_date": "2024-02-02", "end_date": "2024-04-02"}, 400, "Error message", ValueError("Error message")),
 ]
 
 @pytest.mark.parametrize("input_data, expected_status, expected_response, side_effect", test_data_create_league)
 def test_create_league(mocker, input_data, expected_status, expected_response, side_effect):
     # Mock Firestore function
     mock_createLeagueFirestore = mocker.patch('gamesetmatch.api.createLeagueFirestore', return_value=sample_league_info_create_league if not side_effect else None)
-    if side_effect:
+    if side_effect and side_effect != "No Call":
         mock_createLeagueFirestore.side_effect = side_effect
 
     # Mock request
@@ -74,7 +74,7 @@ def test_create_league(mocker, input_data, expected_status, expected_response, s
 
     # Assertions
     if side_effect != "No Call":
-        mock_createLeagueFirestore.assert_called_once_with(input_data["league_name"], input_data["location"], input_data["start_date"], input_data["end_date"])
+        mock_createLeagueFirestore.assert_called_once_with(input_data["league_name"], input_data["area"], input_data["start_date"], input_data["end_date"])
     assert response.status_code == expected_status
     if expected_status == 200:
         assert response.get_json() == expected_response

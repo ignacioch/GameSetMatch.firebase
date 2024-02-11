@@ -165,7 +165,7 @@ def addPlayerToLeagueFirestore(player_id, league_id):
     else:
         raise ValueError("Failed to retrieve updated league info")
 
-def createLeagueFirestore(league_name, location, start_date_str, end_date_str):
+def createLeagueFirestore(league_name, area_id, start_date_str, end_date_str):
     firestore_client = firestore.client()
     league_ref = firestore_client.collection("Leagues").document()
 
@@ -175,7 +175,7 @@ def createLeagueFirestore(league_name, location, start_date_str, end_date_str):
 
     new_league_data = {
         "league_name": league_name,
-        "location": location,
+        "area": area_id,
         "running": False,
         "current_round": 0,
         "unallocatedPlayers": [],

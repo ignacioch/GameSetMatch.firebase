@@ -258,45 +258,89 @@ def addPlayerToLeague(req: https_fn.Request) -> https_fn.Response:
 
 
 def createLeague(req: https_fn.Request) -> https_fn.Response:
+    """
+    Creates a new league with specified details and adds it to the Firestore database.
+
+    This function parses JSON data from the incoming HTTP POST request to create a new league.
+    It requires 'league_name', 'area_id', 'start_date', and 'end_date' fields in the JSON payload.
+
+    Args:
+        req (https_fn.Request): The request object containing JSON data.
+
+    Fields:
+        - league_name (str): The name of the league to be created.
+        - area_id (str): The identifier of the area where the league is located.
+        - start_date (str): The start date of the league, in "YYYY-MM-DD" format.
+        - end_date (str): The end date of the league, in "YYYY-MM-DD" format.
+
+    Returns:
+        https_fn.Response: A JSON response containing the newly created league's details,
+        including its unique Firestore ID and other provided information,
+        or an error message with an appropriate HTTP status code on failure.
+    """
+
+    # Extracts data from the request JSON payload
     request_json = req.get_json()
-    league_name = request_json.get("league_name")
-    location = request_json.get("location")
-    start_date = request_json.get("start_date")  # format: "YYYY-MM-DD"
-    end_date = request_json.get("end_date")      # format: "YYYY-MM-DD"
+    league_name = request_json.get("league_name") # Eg Northern Sector Round 1
+    area_id = request_json.get("area")  # This is the id of the area the league is created for
+    start_date = request_json.get("start_date")  # Expects format: "YYYY-MM-DD"
+    end_date = request_json.get("end_date")      # Expects format: "YYYY-MM-DD"
 
-    if not league_name or not location:
-        return https_fn.Response("League name and location are required", status=400)
+    # Validates the presence of mandatory fields
+    if not league_name or not area_id:
+        return https_fn.Response("League name and area are required", status=400)
 
+    # Attempts to create the league in Firestore and return its details
     try:
-        league_info = createLeagueFirestore(league_name, location, start_date, end_date)
+        league_info = createLeagueFirestore(league_name, area_id, start_date, end_date)
         return https_fn.Response(json.dumps({"league_info": league_info}), status=200, content_type="application/json")
     except ValueError as e:
         return https_fn.Response(str(e), status=400)
 
-def startARound(req: https_fn.Request) -> https_fn.Response:
-    """
-    API endpoint to start a new round in a league.
 
-    The function fetches the league document based on the provided league_id,
-    checks for unallocated players, and updates the league's status and groups.
-    
+def startRound(req: https_fn.Request) -> https_fn.Response:
+    """
+    Starts a new round in an existing league by organizing unallocated players into groups.
+
+    This function initiates a new round in a league specified by the league_id in the request.
+    It checks if there are unallocated players in the league; if so, it organizes these players into groups
+    based on their levels and updates the league's current round and status to running. The function also
+    ensures that leagues without unallocated players do not start a new round and returns an error instead.
+
     Args:
         req (https_fn.Request): The request object containing JSON data.
 
+    Fields:
+        - league_id (str): The unique identifier of the league for which to start a new round.
+          This ID is used to fetch the league's details and update its status.
+
     Returns:
-        https_fn.Response: A JSON response indicating success or failure.
+        https_fn.Response: A JSON response containing information about the update, including:
+        - A success message and details of the new round if the operation is successful.
+        - An error message with an appropriate HTTP status code if the operation fails,
+          such as when there are no unallocated players or the league does not exist.
+
+    Raises:
+        ValueError: If the league does not have unallocated players or if the league_id does not correspond to an existing league.
     """
+
+    # Extract the league_id from the request JSON payload
     request_json = req.get_json()
     league_id = request_json.get("league_id")
 
+    # Check for the presence of the league_id in the request
     if not league_id:
         return https_fn.Response("League ID is required", status=400)
 
+    # Attempt to start a new round in the specified league
     try:
         update_info = startRoundInLeagueFirestore(league_id)
+        # Return a successful response with details of the update
         return https_fn.Response(json.dumps(update_info), status=200, content_type="application/json")
     except ValueError as e:
+        # Return an error response if an exception occurs (e.g., no unallocated players or league not found)
         return https_fn.Response(str(e), status=400)
+
 
 
 
