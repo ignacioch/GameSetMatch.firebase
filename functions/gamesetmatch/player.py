@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 class Player:
     def __init__(self, name: str, email: str, dob: str, level: str, areas: List[str]) -> None:
@@ -27,3 +27,30 @@ class Player:
 
     def __repr__(self) -> str:
         return self.__str__()
+    
+    @staticmethod
+    def sort_and_group_players(players_info: List[Dict]) -> Dict[str, List[str]]:
+        """
+        Sorts and groups unallocated players by their ranking.
+
+        Args:
+            unallocated_players (List[str]): List of unallocated player IDs.
+
+        Returns:
+            Dict[str, List[str]]: A dictionary with group names as keys and lists of player IDs as values.
+        """
+        # Sort players by their ranking
+        sorted_players = sorted(players_info, key=lambda x: x['ranking'], reverse=True)
+    
+        # Group sorted players into groups of 5 to 8
+        groups = {}
+        group_size = 5
+        for i in range(0, len(sorted_players), group_size):
+            group_name = f"group{i//group_size + 1}"
+            groups[group_name] = [player['id'] for player in sorted_players[i:i+group_size]]
+            if len(sorted_players) - i <= 8:
+                group_size = 8
+
+        return groups
+    
+    

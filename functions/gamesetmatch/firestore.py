@@ -3,6 +3,7 @@ from google.cloud.firestore_v1.base_query import FieldFilter
 
 from datetime import datetime
 import logging
+from typing import List, Dict
 
 #import .logger
 
@@ -190,42 +191,72 @@ def createLeagueFirestore(league_name, area_id, start_date_str, end_date_str):
     return {**new_league_data, "league_id": league_ref.id}
 
 
-
-def startRoundInLeagueFirestore(league_id):
+def fetchPendingPlayersForLeague(league_id: str):
     """
-    Starts a new round in the specified league by updating its status,
-    incrementing the current round, and organizing players into groups.
-
+    Fetches players waiting to be allocated to groups for the specified league.
+    
     Args:
-        league_id (str): The ID of the league to update.
-
+        league_id (str): Unique identifier of the league.
+    
     Returns:
-        dict: Information about the update.
+        List[Player]: List of unallocated Player objects.
     """
-    firestore_client = firestore.client()
-    league_ref = firestore_client.collection(LEAGUES_COLLECTION).document(league_id)
+    db = firestore.client()
+    league_ref = db.collection(LEAGUES_COLLECTION).document(league_id)
+    league_doc = league_ref.get()
+    if league_doc.exists:
+        unallocated_players_ids = league_doc.to_dict().get("unallocatedPlayers", [])
+        players = [fetchPlayerDetails(player_id) for player_id in unallocated_players_ids]  # Implement fetchPlayerDetails
+        return players
+    else:
+        raise ValueError("League not found")
+
+def startRoundInLeagueFirestore(league_id: str, sorted_groups):
+    """
+    Updates the league with new groups, sets it as running, and increments the current round.
+    
+    Args:
+        league_id (str): Unique identifier of the league.
+        sorted_groups (List[List[Player]]): Nested list of player groups.
+    
+    Returns:
+        dict: Updated league information.
+    """
+    db = firestore.client()
+    league_ref = db.collection("Leagues").document(league_id)
     league_doc = league_ref.get()
     
     if not league_doc.exists:
         raise ValueError("League not found")
-
+    
     league_data = league_doc.to_dict()
-    unallocated_players = league_data.get("unallocatedPlayers", [])
-
-    if not unallocated_players:
-        raise ValueError("No unallocated players to start a round")
-
-    # Sort and group players - Implement your logic here
-    # Example: sorted_players = sort_and_group_players(unallocated_players)
-
-    # Update league data
     league_data["running"] = True
     league_data["current_round"] += 1
-    # league_data["Groups"] = sorted_players  # Update groups based on your logic
-
-    # Save the updates
+    league_data["groups"] = {f"group_{i+1}": [player.id for player in group] for i, group in enumerate(sorted_groups)}
+    
     league_ref.update(league_data)
+    return league_data
 
-    return {"message": "Round started successfully", "league_id": league_id}
+def fetch_players_info(player_ids: List[str]) -> List[Dict]:
+    """
+    Fetches detailed information for each player given their IDs.
+
+    Args:
+        player_ids (List[str]): List of player IDs.
+
+    Returns:
+        List[Dict]: A list of dictionaries containing player information.
+    """
+    firestore_client = firestore.client()
+    players_collection = firestore_client.collection(PLAYERS_COLLECTION)
+    players_info = []
+
+    for player_id in player_ids:
+        player_doc = players_collection.document(player_id).get()
+        if player_doc.exists:
+            player_info = player_doc.to_dict()
+            players_info.append(player_info)
+
+    return players_info
 
 

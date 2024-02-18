@@ -297,7 +297,6 @@ def createLeague(req: https_fn.Request) -> https_fn.Response:
     except ValueError as e:
         return https_fn.Response(str(e), status=400)
 
-
 def startRound(req: https_fn.Request) -> https_fn.Response:
     """
     Starts a new round in an existing league by organizing unallocated players into groups.
@@ -307,40 +306,43 @@ def startRound(req: https_fn.Request) -> https_fn.Response:
     based on their levels and updates the league's current round and status to running. The function also
     ensures that leagues without unallocated players do not start a new round and returns an error instead.
 
+    
     Args:
         req (https_fn.Request): The request object containing JSON data.
-
+        
     Fields:
-        - league_id (str): The unique identifier of the league for which to start a new round.
-          This ID is used to fetch the league's details and update its status.
-
+        - league_id (str): The unique identifier of the league to start a new round for.
+    
     Returns:
         https_fn.Response: A JSON response containing information about the update, including:
         - A success message and details of the new round if the operation is successful.
         - An error message with an appropriate HTTP status code if the operation fails,
           such as when there are no unallocated players or the league does not exist.
-
+    
     Raises:
         ValueError: If the league does not have unallocated players or if the league_id does not correspond to an existing league.
-    """
 
-    # Extract the league_id from the request JSON payload
+    """
+    
     request_json = req.get_json()
     league_id = request_json.get("league_id")
-
-    # Check for the presence of the league_id in the request
+    
     if not league_id:
         return https_fn.Response("League ID is required", status=400)
-
-    # Attempt to start a new round in the specified league
+    
     try:
-        update_info = startRoundInLeagueFirestore(league_id)
-        # Return a successful response with details of the update
-        return https_fn.Response(json.dumps(update_info), status=200, content_type="application/json")
+        players = fetchPendingPlayersForLeague(league_id)
+        if not players:
+            return https_fn.Response("No unallocated players to start a round", status=400)
+        
+        sorted_groups = Player.sort_and_group_players(players)
+        league_info = startRoundInLeagueFirestore(league_id, sorted_groups)
+        
+        return https_fn.Response(json.dumps({"message": "Round started successfully",
+                                             "league_info": league_info}), 
+                                 status=200, content_type="application/json")
     except ValueError as e:
-        # Return an error response if an exception occurs (e.g., no unallocated players or league not found)
         return https_fn.Response(str(e), status=400)
-
 
 
 
