@@ -4,40 +4,41 @@ from gamesetmatch.player import Player
 
 # Sample data for testing
 players_info = [
-    {"id": "player1", "ranking": 1200},
-    {"id": "player2", "ranking": 1500},
-    {"id": "player3", "ranking": 900},
-    {"id": "player4", "ranking": 1800},
-    {"id": "player5", "ranking": 1100},
-    {"id": "player6", "ranking": 1300},
-    {"id": "player7", "ranking": 1000},
-    {"id": "player8", "ranking": 1600},
-    {"id": "player9", "ranking": 1400},
+    Player.create_dummy_player(id="player1", rankingIn=1200, city="London"),
+    Player.create_dummy_player(id="player2", rankingIn=1500, city="London"),
+    Player.create_dummy_player(id="player3", rankingIn=900, city="London"),
+    Player.create_dummy_player(id="player4", rankingIn=1800, city="London"),
+    Player.create_dummy_player(id="player5", rankingIn=1100, city="London"),
+    Player.create_dummy_player(id="player6", rankingIn=1300, city="London"),
+    Player.create_dummy_player(id="player7", rankingIn=1000, city="London"),
+    Player.create_dummy_player(id="player8", rankingIn=1600, city="London"),
+    Player.create_dummy_player(id="player9", rankingIn=1400, city="London")
 ]
 
 players_info_4 = [
-    {"id": "player1", "ranking": 1200},
-    {"id": "player2", "ranking": 1500},
-    {"id": "player3", "ranking": 900},
-    {"id": "player4", "ranking": 1800},
+    Player.create_dummy_player(id="player1", rankingIn=1200, city="London"),
+    Player.create_dummy_player(id="player2", rankingIn=1500, city="London"),
+    Player.create_dummy_player(id="player3", rankingIn=900, city="London"),
+    Player.create_dummy_player(id="player4", rankingIn=1800, city="London")
 ]
 
 players_info_13 = [
-    {"id": "player1", "ranking": 1200},
-    {"id": "player2", "ranking": 1500},
-    {"id": "player3", "ranking": 900},
-    {"id": "player4", "ranking": 1800},
-    {"id": "player5", "ranking": 1100},
-    {"id": "player6", "ranking": 1300},
-    {"id": "player7", "ranking": 1000},
-    {"id": "player8", "ranking": 1600},
-    {"id": "player9", "ranking": 1400},
-    {"id": "player10", "ranking": 950},
-    {"id": "player11", "ranking": 1250},
-    {"id": "player12", "ranking": 1150},
-    {"id": "player13", "ranking": 1350},
+    Player.create_dummy_player(id="player1", rankingIn=1200, city="London"),
+    Player.create_dummy_player(id="player2", rankingIn=1500, city="London"),
+    Player.create_dummy_player(id="player3", rankingIn=900, city="London"),
+    Player.create_dummy_player(id="player4", rankingIn=1800, city="London"),
+    Player.create_dummy_player(id="player5", rankingIn=1100, city="London"),
+    Player.create_dummy_player(id="player6", rankingIn=1300, city="London"),
+    Player.create_dummy_player(id="player7", rankingIn=1000, city="London"),
+    Player.create_dummy_player(id="player8", rankingIn=1600, city="London"),
+    Player.create_dummy_player(id="player9", rankingIn=1400, city="London"),
+    Player.create_dummy_player(id="player10", rankingIn=950, city="London"),
+    Player.create_dummy_player(id="player11", rankingIn=1250, city="London"),
+    Player.create_dummy_player(id="player12", rankingIn=1150, city="London"),
+    Player.create_dummy_player(id="player13", rankingIn=1350, city="London")
 ]
 
+@pytest.mark.player
 @pytest.mark.parametrize("players_info, expected_groups", [
     # Test case with 4 players, expecting 1 group
     (players_info_4, {
@@ -58,7 +59,7 @@ def test_sort_and_group_players(players_info, expected_groups):
     sorted_groups = Player.sort_and_group_players(players_info)
     assert sorted_groups == expected_groups
 
-
+@pytest.mark.player
 @pytest.mark.parametrize("player_count, expected_distribution", [
     (4, [4]),  # 4 players -> 1 group of 4
     (9, [5, 4]),  # 9 players -> 1 group of 5, 1 group of 4

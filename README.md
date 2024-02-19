@@ -15,7 +15,7 @@ GameSetMatch is a cloud-based application providing an API to manage player prof
 
 ### Installing
 
-1. Clone the repo and navigate to project directory
+1. Clone the repo and navigate to project directory (or `/functions` if you prefer)
 2. Setup a virtual environment and activate it
 
 ```bash
@@ -26,7 +26,7 @@ source venv/bin/activate  # On Windows, use venv\Scripts\activate
 3. Install required Python dependencies
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.txt --index-url https://pypi.org/simple
 ```
 
 ### Configuration

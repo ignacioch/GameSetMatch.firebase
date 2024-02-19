@@ -16,7 +16,7 @@ import json
 from .player import Player
 from .match import Match
 #import .logger
-from .firestore import writePlayerToFirestore,addMatchToFirestore,getPlayerDetailsFromFirestore,deletePlayerFromFirestore,deleteMatchFromFirestore,getMatchDetailsFromFirestore,addPlayerToLeagueFirestore,createLeagueFirestore
+from .firestore import writePlayerToFirestore,addMatchToFirestore,getPlayerDetailsFromFirestore,deletePlayerFromFirestore,deleteMatchFromFirestore,getMatchDetailsFromFirestore,addPlayerToLeagueFirestore,createLeagueFirestore,startRoundInLeagueFirestore,fetchPendingPlayersForLeague
 
 app = initialize_app(options={"projectId":"gamesetmatch-ef350"})
 
@@ -331,13 +331,15 @@ def startRound(req: https_fn.Request) -> https_fn.Response:
         return https_fn.Response("League ID is required", status=400)
     
     try:
-        players = fetchPendingPlayersForLeague(league_id)
+        players : List[Player] = fetchPendingPlayersForLeague(league_id)
+        logger.debug(f"Will assign {players} into groups.")
         if not players:
             return https_fn.Response("No unallocated players to start a round", status=400)
         
         sorted_groups = Player.sort_and_group_players(players)
+        logger.debug(f"Sorted_groups:{sorted_groups}")
         league_info = startRoundInLeagueFirestore(league_id, sorted_groups)
-        
+        logger.debug(f"League Updated. New value={league_info}")
         return https_fn.Response(json.dumps({"message": "Round started successfully",
                                              "league_info": league_info}), 
                                  status=200, content_type="application/json")
