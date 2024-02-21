@@ -2,6 +2,7 @@ from typing import List, Optional, Dict
 from faker import Faker
 import random
 from .utils import generate_random_hex_int 
+from .types import PlayerFields
 
 class Player:
     # Define constants for group sizes at the class level
@@ -20,13 +21,13 @@ class Player:
 
     def to_dict(self) -> dict:
         return {
-            "id": self.id,
-            "name": self.name,
-            "email": self.email,
-            "DOB": self.dob,
-            "level": self.level,
-            "areas": self.areas,  # Include areas in the dictionary representation
-            "ranking": self.ranking
+            PlayerFields.ID.value: self.id,
+            PlayerFields.NAME.value: self.name,
+            PlayerFields.EMAIL.value: self.email,
+            PlayerFields.DOB.value: self.dob,
+            PlayerFields.LEVEL.value: self.level,
+            PlayerFields.AREAS.value: self.areas,  # Include areas in the dictionary representation
+            PlayerFields.RANKING.value: self.ranking
         }
     
     def __str__(self) -> str:

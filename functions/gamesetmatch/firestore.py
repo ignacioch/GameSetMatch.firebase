@@ -9,10 +9,7 @@ from typing import List, Dict
 
 from .player import Player
 from .match import Match
-
-MATCHES_COLLECTION = "matches"
-PLAYERS_COLLECTION = "players"
-LEAGUES_COLLECTION  = "leagues" 
+from .types import MATCHES_COLLECTION,PLAYERS_COLLECTION,LEAGUES_COLLECTION, LeagueFields, PlayerFields, MatchFields
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # Set to DEBUG or INFO as needed
@@ -24,7 +21,7 @@ logger.setLevel(logging.DEBUG)  # Set to DEBUG or INFO as needed
 def writePlayerToFirestore(transaction,firestore_client, player:Player):
     players_collection = firestore_client.collection(PLAYERS_COLLECTION)
     #query = players_collection.where(field_path="email", op_string="==", value=email)
-    query = players_collection.where(filter=FieldFilter("email","==",player.email))
+    query = players_collection.where(filter=FieldFilter(PlayerFields.EMAIL.value,"==",player.email))
     results = query.get(transaction=transaction)
     
     if results:
@@ -43,11 +40,11 @@ def getPlayerDetailsFromFirestore(firestore_client, player_id=None, name=None, e
     query = players_collection.limit(1)  # Adjust the limit as needed
 
     if player_id:
-        query = query.where('id', '==', player_id)
+        query = query.where(PlayerFields.ID.value, '==', player_id)
     if name:
-        query = query.where('name', '==', name)
+        query = query.where(PlayerFields.NAME.value, '==', name)
     if email:
-        query = query.where('email', '==', email)
+        query = query.where(PlayerFields.EMAIL.value, '==', email)
 
     results = query.stream()
     for doc in results:
@@ -74,7 +71,7 @@ def addMatchToFirestore(transaction, firestore_client, match_info:Match):
             match_doc = matches_collection.document(match_id).get(transaction=transaction)
             if match_doc.exists:
                 # Update only if the score is different
-                if match_doc.to_dict().get("score") != score:
+                if match_doc.to_dict().get(MatchFields.SCORE.value) != score:
                     logger.debug(f"Updating score for match {match_id} to {score}")
                     logger.debug(f"New match {match_info.to_dict()}")
                     transaction.update(matches_collection.document(match_id), match_info.to_dict())
@@ -103,14 +100,13 @@ def getMatchDetailsFromFirestore(firestore_client, match_id=None, player_id=None
     logger.debug(f"getMatchDetailsFromFirestore:match_id={match_id}:player_id:{player_id}")
     if match_id:
         # Query for a specific match by match_id
-        query = matches_collection.where('match_id', '==', match_id)
+        query = matches_collection.where(MatchFields.MATCH_ID.value, '==', match_id)
     elif player_id:
         # Query for matches involving the specified player
-        query = matches_collection.where('player_a_id', '==', player_id).where('player_b_id', '==', player_id)
+        query = matches_collection.where(PlayerFields.PLAYER_A_ID.value, '==', player_id).where(PlayerFields.PLAYER_B_ID.value, '==', player_id)
     else:
-        logger.debug("here")
         # If no criteria provided, select all matches
-        query = matches_collection.order_by('match_date', direction=firestore.Query.DESCENDING)
+        query = matches_collection.order_by(MatchFields.MATCH_DATE.value, direction=firestore.Query.DESCENDING)
 
     logger.debug(f"Query: {query}")
 
@@ -130,10 +126,10 @@ def addPlayerToLeagueFirestore(player_id, league_id):
         player_doc = player_ref.get(transaction=transaction)
         if player_doc.exists:
             player_data = player_doc.to_dict()
-            player_leagues = player_data.get("leagues", [])
+            player_leagues = player_data.get(LEAGUES_COLLECTION, [])
             if league_id not in player_leagues:
                 player_leagues.append(league_id)
-                transaction.update(player_ref, {"leagues": player_leagues})
+                transaction.update(player_ref, {LEAGUES_COLLECTION: player_leagues})
             else:
                 raise ValueError(f"Player already in league {league_id}")
         else:
@@ -143,10 +139,10 @@ def addPlayerToLeagueFirestore(player_id, league_id):
         league_doc = league_ref.get(transaction=transaction)
         if league_doc.exists:
             league_data = league_doc.to_dict()
-            unallocated_players = league_data.get("unallocatedPlayers", [])
+            unallocated_players = league_data.get(LeagueFields.UNALLOCATED_PLAYERS.value, [])
             if player_id not in unallocated_players:
                 unallocated_players.append(player_id)
-                transaction.update(league_ref, {"unallocatedPlayers": unallocated_players})
+                transaction.update(league_ref, {LeagueFields.UNALLOCATED_PLAYERS.value: unallocated_players})
             # No error if player is already in unallocatedPlayers
         else:
             raise ValueError("League not found")
@@ -168,27 +164,27 @@ def addPlayerToLeagueFirestore(player_id, league_id):
 
 def createLeagueFirestore(league_name, area_id, start_date_str, end_date_str):
     firestore_client = firestore.client()
-    league_ref = firestore_client.collection("Leagues").document()
+    league_ref = firestore_client.collection(LEAGUES_COLLECTION).document()
 
     # Convert date strings to datetime.date objects
     start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
     end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
 
     new_league_data = {
-        "league_name": league_name,
-        "area": area_id,
-        "running": False,
-        "current_round": 0,
-        "unallocatedPlayers": [],
-        "dates": {
-            "start": start_date,
-            "end": end_date
+        LeagueFields.LEAGUE_NAME.value : league_name,
+        LeagueFields.AREA.value: area_id,
+        LeagueFields.RUNNING.value : False,
+        LeagueFields.CURRENT_ROUND.value: 0,
+        LeagueFields.UNALLOCATED_PLAYERS.value : [],
+        LeagueFields.DATES.value: {
+            LeagueFields.START_DATE.value: start_date,
+            LeagueFields.END_DATE.value: end_date
         }
     }
 
     league_ref.set(new_league_data)
 
-    return {**new_league_data, "league_id": league_ref.id}
+    return {**new_league_data, LeagueFields.ID.value: league_ref.id}
 
 
 def fetchPendingPlayersForLeague(league_id: str):
@@ -205,7 +201,7 @@ def fetchPendingPlayersForLeague(league_id: str):
     league_ref = db.collection(LEAGUES_COLLECTION).document(league_id)
     league_doc = league_ref.get()
     if league_doc.exists:
-        unallocated_players_ids = league_doc.to_dict().get("unallocatedPlayers", [])
+        unallocated_players_ids = league_doc.to_dict().get(LeagueFields.UNALLOCATED_PLAYERS.value, [])
         players = [fetchPlayerDetails(player_id) for player_id in unallocated_players_ids]  # Implement fetchPlayerDetails
         return players
     else:
@@ -223,16 +219,16 @@ def startRoundInLeagueFirestore(league_id: str, sorted_groups):
         dict: Updated league information.
     """
     db = firestore.client()
-    league_ref = db.collection("Leagues").document(league_id)
+    league_ref = db.collection(LEAGUES_COLLECTION).document(league_id)
     league_doc = league_ref.get()
     
     if not league_doc.exists:
         raise ValueError("League not found")
     
     league_data = league_doc.to_dict()
-    league_data["running"] = True
-    league_data["current_round"] += 1
-    league_data["groups"] = {f"group_{i+1}": [player.id for player in group] for i, group in enumerate(sorted_groups)}
+    league_data[LeagueFields.RUNNING.value] = True
+    league_data[LeagueFields.CURRENT_ROUND.value] += 1
+    league_data[LeagueFields.GROUPS.value] = {f"group_{i+1}": [player.id for player in group] for i, group in enumerate(sorted_groups)}
     
     league_ref.update(league_data)
     return league_data

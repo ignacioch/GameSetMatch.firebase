@@ -1,4 +1,5 @@
 from .score import Score
+from .types import MatchFields
 
 class Match:
     def __init__(self, player_a_id, player_b_id, score, match_date, location, match_id=None):
@@ -11,12 +12,12 @@ class Match:
 
     def to_dict(self):
         return {
-            "player_a_id": self.player_a_id,
-            "player_b_id": self.player_b_id,
-            "score": self.score.to_dict(),
-            "match_date": self.match_date,
-            "location": self.location,
-            "match_id": self.match_id  # This can be None
+            MatchFields.PLAYER_A_ID.value: self.player_a_id,
+            MatchFields.PLAYER_B_ID.value: self.player_b_id,
+            MatchFields.SCORE.value: self.score.to_dict(),
+            MatchFields.MATCH_DATE.value: self.match_date,
+            MatchFields.LOCATION.value: self.location,
+            MatchFields.MATCH_ID.value: self.match_id  # This can be None
         }
 
     def __str__(self):
