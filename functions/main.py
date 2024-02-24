@@ -120,7 +120,6 @@ def deleteMatch(req: https_fn.Request) -> https_fn.Response:
     return api.deleteMatch(req)
 
 
-# In main.py
 @https_fn.on_request()
 def addPlayerToLeague(req: https_fn.Request) -> https_fn.Response:
     """

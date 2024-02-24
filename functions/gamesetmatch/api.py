@@ -11,6 +11,7 @@ from google.cloud.firestore_v1.base_query import FieldFilter
 # python lib imports
 import logging
 import json
+from typing import Dict,Any
 
 # local imports
 from .player import Player
@@ -243,15 +244,32 @@ def getMatchDetails(req: https_fn.Request) -> https_fn.Response:
         return https_fn.Response("No matches found", status=404)
 
 def addPlayerToLeague(req: https_fn.Request) -> https_fn.Response:
-    request_json = req.get_json()
-    player_id = request_json.get("player_id")
-    league_id = request_json.get("league_id")
+    """
+    Adds a player to a specified league by updating the Firestore database.
+
+    This endpoint expects a JSON payload with 'player_id' and 'league_id'.
+    It validates the existence of both IDs, adds the player to the league if not already added,
+    and updates the league's unallocated players list.
+
+    Args:
+        req (https_fn.Request): The incoming request with JSON payload containing 'player_id' and 'league_id'.
+    
+    Fields:
+        - player_id (str): The ID of the player
+        - league_id (str): The ID of the league they are entering
+
+    Returns:
+        https_fn.Response: A JSON response with updated league information or an error message.
+    """
+    request_json: Dict[str, Any] = req.get_json(silent=True) or {}
+    player_id: str = request_json.get("player_id", "")
+    league_id: str = request_json.get("league_id", "")
 
     if not player_id or not league_id:
         return https_fn.Response("Player ID and League ID are required", status=400)
 
     try:
-        league_info = addPlayerToLeagueFirestore(player_id, league_id)
+        league_info: Dict[str, Any] = addPlayerToLeagueFirestore(player_id, league_id)
         return https_fn.Response(json.dumps({"league_info": league_info}), status=200, content_type="application/json")
     except ValueError as e:
         return https_fn.Response(str(e), status=400)

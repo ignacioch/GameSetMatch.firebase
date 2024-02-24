@@ -3,7 +3,7 @@ from google.cloud.firestore_v1.base_query import FieldFilter
 
 from datetime import datetime
 import logging
-from typing import List, Dict
+from typing import List, Dict, Any
 
 #import .logger
 
@@ -116,7 +116,7 @@ def getMatchDetailsFromFirestore(firestore_client, match_id=None, player_id=None
 
     return matches
 
-def addPlayerToLeagueFirestore(player_id, league_id):
+def addPlayerToLeagueFirestore(player_id: str, league_id: str) -> Dict[str, Any]:
     firestore_client = firestore.client()
 
     # Transaction to ensure atomicity of operations
