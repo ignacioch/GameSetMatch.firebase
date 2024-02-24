@@ -101,9 +101,10 @@ def _addNonLeagueMatch(request_json) -> https_fn.Response:
     match_info = Match(player_a_id, player_b_id, score, match_date, location, match_id)
     logger.info(f"Adding Match. type=NoLeague match={match_info}")
 
-    if "match_id" not in match_info.to_dict() and not all(value for key, value in match_info.items() if key != "match_id"):
-        return https_fn.Response("Missing match parameters", status=400)
-
+    valid, error_message, error_code = match_info.is_valid_match()
+    if not valid:
+        return https_fn.Response(error_message, status=error_code)
+        
     firestore_client: google.cloud.firestore.Client = firestore.client()
         
     # Check if both players exist
