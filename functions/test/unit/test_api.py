@@ -1,12 +1,13 @@
 import pytest
 from gamesetmatch import api  # Replace with the actual module name
 from gamesetmatch import player
+from gamesetmatch import types
 
 # Test data for parametrization
 # Sample league info to be returned on successful addition
 sample_league_info = {
-    "league_name": "North City League",
-    "location": "North City",
+    types.LeagueFields.LEAGUE_NAME.value: "North City League",
+    types.LeagueFields.AREA.value: "North City",
     # other fields...
 }
 
@@ -45,12 +46,12 @@ def test_add_player_to_league(mocker, input_data, expected_status, expected_resp
 
 # Sample league info to be returned on successful creation
 sample_league_info_create_league = {
-    "league_name": "North City League",
-    "area": "North City",
-    "running": False,
-    "current_round": 0,
-    "unallocatedPlayers": [],
-    "league_id": "new_league_id"
+    types.LeagueFields.LEAGUE_NAME.value: "North City League",
+    types.LeagueFields.AREA.value: "North City",
+    types.LeagueFields.RUNNING.value: False,
+    types.LeagueFields.CURRENT_ROUND.value: 0,
+    types.LeagueFields.UNALLOCATED_PLAYERS.value: [],
+    types.LeagueFields.ID.value: "new_league_id"
 }
 
 # Test data for parametrization
@@ -94,8 +95,8 @@ Start Round
 sample_start_round_info = {
     "message": "Round started successfully",
     "league_info": {
-        "current_round": 1,
-        "running": True,
+        types.LeagueFields.CURRENT_ROUND.value: 1,
+        types.LeagueFields.RUNNING.value: True,
     }
 }
 
