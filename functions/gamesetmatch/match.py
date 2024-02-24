@@ -1,6 +1,8 @@
 from .score import Score
 from .types import MatchFields
 
+from typing import Optional
+
 class Match:
     def __init__(self, player_a_id, player_b_id, score, match_date, location, match_id=None):
         self.player_a_id = player_a_id
@@ -27,3 +29,10 @@ class Match:
 
     def __repr__(self):
         return self.__str__()
+
+    def is_valid_match(self) -> (bool, Optional[str], Optional[int]):
+        # The match is valid if it doesn't have an ID but everything else is provided
+        # used by _addNonLeagueMatch - that means we have a new match to add
+        if self.match_id is None and not all(value for key, value in self.__dict__.items() if key != "match_id"):
+            return False, "Adding new match requires all parameters", 400
+        return True, None, None
