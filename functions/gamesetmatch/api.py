@@ -74,6 +74,54 @@ def registerPlayer(req: https_fn.Request) -> https_fn.Response:
     except ValueError as e:
         return https_fn.Response(str(e), status=400)
 
+def _addNonLeagueMatch(request_json) -> https_fn.Response:
+    """
+    Adds a new match record to the Firestore database.
+
+    Extracts match details from the JSON payload of an HTTP POST request. It requires
+    'player_a_id', 'player_b_id', 'score', 'date', and 'location' fields, and optionally
+    accepts a 'match_id'.
+
+    Args:
+        request_json (JSON): The request object containing JSON data for the match.
+
+    Returns:
+        https_fn.Response: A JSON response containing the newly added match's data,
+        including its Firestore ID, or an error message with an appropriate HTTP
+        status code on failure
+    """
+
+    player_a_id = request_json.get("player_a_id")
+    player_b_id = request_json.get("player_b_id")
+    score = request_json.get("score")
+    match_id = request_json.get("match_id")  # Can be None
+    match_date = request_json.get("match_date")
+    location = request_json.get("location")
+
+    match_info = Match(player_a_id, player_b_id, score, match_date, location, match_id)
+    logger.info(f"Adding Match. type=NoLeague match={match_info}")
+
+    if "match_id" not in match_info.to_dict() and not all(value for key, value in match_info.items() if key != "match_id"):
+        return https_fn.Response("Missing match parameters", status=400)
+
+    firestore_client: google.cloud.firestore.Client = firestore.client()
+        
+    # Check if both players exist
+    if "match_id" not in match_info.to_dict() and not getPlayerDetailsFromFirestore(firestore_client,match_info.player_a_id):
+        return https_fn.Response(f"Player A (ID= {match_info.player_a_id}) does not exist", status=400)
+    if "match_id" not in match_info.to_dict() and not getPlayerDetailsFromFirestore(firestore_client,match_info.player_b_id):
+        return https_fn.Response(f"Player B (ID= {match_info.player_b_id}) does not exist", status=400)
+    # Add match
+    new_match = addMatchToFirestore(firestore_client.transaction(), firestore_client, match_info)
+
+    logger.info(f"Match {new_match.match_id} added successfully.")
+    return https_fn.Response(json.dumps({"match": new_match.to_dict()}), status=200, content_type="application/json")
+
+def _addLeagueMatch(request_json) -> https_fn.Response:
+    """
+    Adds a match that belongs to a league.
+    """
+
 
 def addMatch(req: https_fn.Request) -> https_fn.Response:
     """
@@ -100,34 +148,11 @@ def addMatch(req: https_fn.Request) -> https_fn.Response:
         if not request_json:
             return https_fn.Response("Invalid request", status=400)
 
-        # Extract match data
-        player_a_id = request_json.get("player_a_id")
-        player_b_id = request_json.get("player_b_id")
-        score = request_json.get("score")
-        match_id = request_json.get("match_id")  # Can be None
-        match_date = request_json.get("match_date")
-        location = request_json.get("location")
-
-        match_info = Match(player_a_id, player_b_id, score, match_date, location, match_id)
-        logger.info(f"Incoming request={match_info}")
-
-        if "match_id" not in match_info.to_dict() and not all(value for key, value in match_info.items() if key != "match_id"):
-            return https_fn.Response("Missing match parameters", status=400)
-
-
-        firestore_client: google.cloud.firestore.Client = firestore.client()
+        # Extract from request
+        league_id = request_json.get("league_id")  # This can be None
+        if league_id is None :
+            return _addNonLeagueMatch(request_json)
         
-        # Check if both players exist
-        if "match_id" not in match_info.to_dict() and not getPlayerDetailsFromFirestore(firestore_client,match_info.player_a_id):
-            return https_fn.Response(f"Player A (ID= {match_info.player_a_id}) does not exist", status=400)
-        if "match_id" not in match_info.to_dict() and not getPlayerDetailsFromFirestore(firestore_client,match_info.player_b_id):
-            return https_fn.Response(f"Player B (ID= {match_info.player_b_id}) does not exist", status=400)
-        # Add match
-        new_match = addMatchToFirestore(firestore_client.transaction(), firestore_client, match_info)
-
-        logger.info(f"Match {new_match.match_id} added successfully.")
-        return https_fn.Response(json.dumps({"match": new_match.to_dict()}), status=200, content_type="application/json")
-
     except Exception as e:
         logging.error(f"Error adding match: {str(e)}")
         return https_fn.Response(f"Error: {str(e)}", status=500)
