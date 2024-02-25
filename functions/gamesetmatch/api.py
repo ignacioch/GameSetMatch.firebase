@@ -104,7 +104,7 @@ def _addNonLeagueMatch(request_json) -> https_fn.Response:
     valid, error_message, error_code = match_info.is_valid_match()
     if not valid:
         return https_fn.Response(error_message, status=error_code)
-        
+
     firestore_client: google.cloud.firestore.Client = firestore.client()
         
     # Check if both players exist
@@ -122,7 +122,7 @@ def _addLeagueMatch(request_json) -> https_fn.Response:
     """
     Adds a match that belongs to a league.
     """
-
+    pass
 
 def addMatch(req: https_fn.Request) -> https_fn.Response:
     """
@@ -153,6 +153,8 @@ def addMatch(req: https_fn.Request) -> https_fn.Response:
         league_id = request_json.get("league_id")  # This can be None
         if league_id is None :
             return _addNonLeagueMatch(request_json)
+        else :
+            return _addLeagueMatch(request_json)
         
     except Exception as e:
         logging.error(f"Error adding match: {str(e)}")

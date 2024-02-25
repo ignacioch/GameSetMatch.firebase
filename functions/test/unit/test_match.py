@@ -35,6 +35,8 @@ def test_to_dict_method():
     ("player1", "player2", None, "Court 1", None, False, "Adding new match requires all parameters", 400),  # Missing match_date
     ("player1", "player2", "2023-03-28", None, None, False, "Adding new match requires all parameters", 400),  # Missing location
     ("player1", "player2", "2023-03-28", "Court 1", "match123", True, None, None),  # With match_id, still valid
+    ("player1", "player2", None, "Court 1", "match123", False, "Updating a match requires score to be provided", 400),  # Missing score when match_id is not none
+
 ])
 def test_is_valid_match(player_a_id, player_b_id, match_date, location, match_id, expected_result, expected_error, expected_code, valid_score_set1_64):
     score = valid_score_set1_64 if match_date is not None else None  # Use score fixture here

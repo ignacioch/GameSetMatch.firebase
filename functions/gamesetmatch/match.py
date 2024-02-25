@@ -1,7 +1,15 @@
 from .score import Score
 from .types import MatchFields
 
+from enum import Enum
 from typing import Optional
+
+
+class MatchType(Enum):
+    NEW_MATCH_NO_LEAGUE = 1
+    UPDATE_MATCH_NO_LEAGUE = 2
+    NEW_MATCH_LEAGUE = 3
+    UPDATE_MATCH_LEAGUE = 4
 
 class Match:
     def __init__(self, player_a_id, player_b_id, score, match_date, location, match_id=None):
@@ -35,4 +43,8 @@ class Match:
         # used by _addNonLeagueMatch - that means we have a new match to add
         if self.match_id is None and not all(value for key, value in self.__dict__.items() if key != "match_id"):
             return False, "Adding new match requires all parameters", 400
+        elif self.match_id is not None and ("score" not in self.__dict__ or self.score.to_dict() is None or self.score.to_dict() == {}):
+            return False, "Updating a match requires score to be provided", 400
         return True, None, None
+    
+
