@@ -19,6 +19,7 @@ GameSetMatch is a cloud-based application providing an API to manage player prof
 2. Setup a virtual environment and activate it
 
 ```bash
+cd cli/functions
 python -m venv venv
 source venv/bin/activate  # On Windows, use venv\Scripts\activate
 ```
