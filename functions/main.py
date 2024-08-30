@@ -1,4 +1,4 @@
-import gamesetmatch.api as api
+import gamesetmatch.api_old as api_old
 
 from firebase_functions import https_fn
 
@@ -22,7 +22,7 @@ def getMatchDetails(req: https_fn.Request) -> https_fn.Response:
         https_fn.Response: A JSON response containing the requested match's details, or
         a 'No matches found' message with a 404 status code if no matches meet the criteria.
     """
-    return api.getMatchDetails(req)
+    return api_old.getMatchDetails(req)
 
 @https_fn.on_request()
 def addMatch(req: https_fn.Request) -> https_fn.Response:
@@ -41,7 +41,7 @@ def addMatch(req: https_fn.Request) -> https_fn.Response:
         including its Firestore ID, or an error message with an appropriate HTTP
         status code on failure.
     """
-    return api.addMatch(req)
+    return api_old.addMatch(req)
 
 @https_fn.on_request()
 def registerPlayer(req: https_fn.Request) -> https_fn.Response:
@@ -65,10 +65,10 @@ def registerPlayer(req: https_fn.Request) -> https_fn.Response:
         HTTP status code on failure. The response includes the player's name, email,
         date of birth (DOB), level, and areas of interest.
     """
-    return api.registerPlayer(req)
+    return api_old.registerPlayer(req)
 
 @https_fn.on_request()
-def getPlayerDetails(req: https_fn.Request) -> https_fn.Response:
+def getPlayerDetailsLegacy(req: https_fn.Request) -> https_fn.Response:
     """
     Retrieves details of a specific player from the Firestore database.
 
@@ -82,7 +82,26 @@ def getPlayerDetails(req: https_fn.Request) -> https_fn.Response:
         https_fn.Response: A JSON response containing the requested player's details, or
         a 'Player not found' message with a 404 status code if the player does not exist.
     """
-    return api.getPlayerDetails(req)
+    return api_old.getPlayerDetails(req)
+
+
+@https_fn.on_request()
+def getPlayerDetails(req: https_fn.Request) -> https_fn.Response:
+    """
+    Retrieves details of a specific player from the Firestore database.
+    
+    If the player exists, it returns a 200 status code with the player's data.
+    If the player does not exist, it returns a 404 status code.
+
+    TODO : shall it also search by email/name?
+
+    Args:
+        req (https_fn.Request): The request object containing the query parameter 'player_id'.
+
+    Returns:
+        https_fn.Response: A JSON response containing the player's details if they exist,
+        or a 404 status code with an appropriate message if they don't.
+    """
 
 
 @https_fn.on_request()
@@ -100,7 +119,7 @@ def deletePlayer(req: https_fn.Request) -> https_fn.Response:
         https_fn.Response: A confirmation message upon successful deletion, or an error
         message with an appropriate HTTP status code on failure.
     """
-    return api.deletePlayer(req)
+    return api_old.deletePlayer(req)
 
 @https_fn.on_request()
 def deleteMatch(req: https_fn.Request) -> https_fn.Response:
@@ -117,7 +136,7 @@ def deleteMatch(req: https_fn.Request) -> https_fn.Response:
         https_fn.Response: A confirmation message upon successful deletion, or an error
         message with an appropriate HTTP status code on failure.
     """
-    return api.deleteMatch(req)
+    return api_old.deleteMatch(req)
 
 
 @https_fn.on_request()
@@ -135,7 +154,7 @@ def addPlayerToLeague(req: https_fn.Request) -> https_fn.Response:
         https_fn.Response: A JSON response confirming the addition of the player to the league,
         or an error message with an appropriate HTTP status code on failure.
     """
-    return api.addPlayerToLeague(req)
+    return api_old.addPlayerToLeague(req)
 
 @https_fn.on_request()
 def createLeague(req: https_fn.Request) -> https_fn.Response:
@@ -156,7 +175,7 @@ def createLeague(req: https_fn.Request) -> https_fn.Response:
         including its unique Firestore ID and other provided information,
         or an error message with an appropriate HTTP status code on failure.
     """
-    return api.createLeague(req)
+    return api_old.createLeague(req)
 
 @https_fn.on_request()
 def startRound(req: https_fn.Request) -> https_fn.Response:
@@ -183,7 +202,7 @@ def startRound(req: https_fn.Request) -> https_fn.Response:
     Raises:
         ValueError: If the league does not have unallocated players or if the league_id does not correspond to an existing league.
     """
-    return api.startRound(req)
+    return api_old.startRound(req)
 
 
 

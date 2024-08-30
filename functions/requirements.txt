@@ -4,3 +4,6 @@ pytest==6.2.5
 requests==2.25.1
 pytest-mock
 Faker
+sphinx
+sphinx-rtd-theme
+sphinxcontrib-napoleon

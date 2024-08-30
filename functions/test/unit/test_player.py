@@ -38,6 +38,7 @@ players_info_13 = [
     Player.create_dummy_player(id="player13", rankingIn=1350, city="London")
 ]
 
+@pytest.mark.unit
 @pytest.mark.player
 @pytest.mark.parametrize("players_info, expected_groups", [
     # Test case with 4 players, expecting 1 group
@@ -59,6 +60,7 @@ def test_sort_and_group_players(players_info, expected_groups):
     sorted_groups = Player.sort_and_group_players(players_info)
     assert sorted_groups == expected_groups
 
+@pytest.mark.unit
 @pytest.mark.player
 @pytest.mark.parametrize("player_count, expected_distribution", [
     (4, [4]),  # 4 players -> 1 group of 4
