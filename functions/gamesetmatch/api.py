@@ -14,3 +14,12 @@ app = initialize_app(options={"projectId":"gamesetmatch-ef350"})
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # Set to DEBUG or INFO as needed
+
+def getPlayerDetails(req: https_fn.Request) -> https_fn.Response:
+    request_json = req.get_json()
+
+    player_details = None
+    if player_details:
+        return https_fn.Response(json.dumps(player_details), status=200)
+    else:
+        return https_fn.Response("Player not found", status=404)
