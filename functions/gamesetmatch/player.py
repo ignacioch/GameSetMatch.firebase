@@ -111,7 +111,7 @@ class Player:
         ranking = rankingIn if rankingIn else fake.random_int(min=1, max=1000)
 
         p = Player(name, email, dob, level, areas, ranking)
-        p.id = id if id else generate_random_hex_int
+        p.id = id if id else generate_random_hex_int()
         return p
     
     

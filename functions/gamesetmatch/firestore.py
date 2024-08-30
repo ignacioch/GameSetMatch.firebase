@@ -9,6 +9,7 @@ from typing import List, Dict, Any
 
 from .player import Player
 from .match import Match
+from .league import League
 from .types import MATCHES_COLLECTION,PLAYERS_COLLECTION,LEAGUES_COLLECTION, LeagueFields, PlayerFields, MatchFields
 
 logger = logging.getLogger(__name__)
@@ -87,6 +88,23 @@ def addMatchToFirestore(transaction, firestore_client, match_info:Match):
         
         return  match_info
 
+'''
+Adds a match to a league. A match is added under groups, onto the correct subgroup.
+'''
+@firestore.transactional
+def addMatchToLeagueFirestore(transaction, firestore_client,match_info: Match, league_id):
+    league_ref = firestore_client.collection(LEAGUES_COLLECTION).document(league_id)
+    league_doc = league_ref.get(transaction=transaction)
+
+    if not league_doc.exists:
+        raise ValueError("League not found")
+
+    league_data = league_doc.to_dict()
+    logger.debug(f"Fetched league information {league_data}")
+    current_round = league_data["current_round"]
+    logger.info(f"league_id={league_id}. Adding match={match_info}  to round={current_round}")
+    pass
+
 def deletePlayerFromFirestore(firestore_client, player_id):
     player_ref = firestore_client.collection(PLAYERS_COLLECTION).document(player_id)
     player_ref.delete()
@@ -162,30 +180,21 @@ def addPlayerToLeagueFirestore(player_id: str, league_id: str) -> Dict[str, Any]
     else:
         raise ValueError("Failed to retrieve updated league info")
 
-def createLeagueFirestore(league_name, area_id, start_date_str, end_date_str):
-    firestore_client = firestore.client()
-    league_ref = firestore_client.collection(LEAGUES_COLLECTION).document()
+@firestore.transactional
+def createLeagueFirestore(transaction,firestore_client, league:League):
+    leagues_collection = firestore_client.collection(LEAGUES_COLLECTION)
+    query = leagues_collection.where(filter=FieldFilter(LeagueFields.AREA.value,"==",league.area))
+    results = query.get(transaction=transaction)
+    
+    if results:
+        raise ValueError(f"There is already a league for area={player.area})")
 
-    # Convert date strings to datetime.date objects
-    start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
-    end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+    # Create a new league document with an auto-generated ID
+    new_league_ref = leagues_collection.document()
+    league.league_id = new_league_ref.id # Update the league's id
+    transaction.set(new_league_ref, league.to_dict())
 
-    new_league_data = {
-        LeagueFields.LEAGUE_NAME.value : league_name,
-        LeagueFields.AREA.value: area_id,
-        LeagueFields.RUNNING.value : False,
-        LeagueFields.CURRENT_ROUND.value: 0,
-        LeagueFields.UNALLOCATED_PLAYERS.value : [],
-        LeagueFields.DATES.value: {
-            LeagueFields.START_DATE.value: start_date,
-            LeagueFields.END_DATE.value: end_date
-        }
-    }
-
-    league_ref.set(new_league_data)
-
-    return {**new_league_data, LeagueFields.ID.value: league_ref.id}
-
+    return league
 
 def fetchPendingPlayersForLeague(league_id: str):
     """

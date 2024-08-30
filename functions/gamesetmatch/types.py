@@ -5,16 +5,18 @@ PLAYERS_COLLECTION = "players"
 LEAGUES_COLLECTION  = "leagues" 
 
 class LeagueFields(Enum):
-    LEAGUE_NAME = "leagueName"
+    LEAGUE_ID = "league_id"
+    LEAGUE_NAME = "league_name"
     AREA = "area"
     RUNNING = "running"
-    CURRENT_ROUND = "currentRound"
-    UNALLOCATED_PLAYERS = "unallocatedPlayers"
+    CURRENT_ROUND = "current_round"
+    UNALLOCATED_PLAYERS = "unallocated_players"
     DATES = "dates"
     START_DATE = "start"
     END_DATE = "end"
     ID = "league_id"
     GROUPS = "groups"
+    ARCHIVED = "archived"
 
 class PlayerFields(Enum):
     EMAIL = "email"
@@ -32,3 +34,5 @@ class MatchFields(Enum):
     MATCH_DATE = "match_date"
     LOCATION = "location"
     MATCH_ID = "match_id"
+    LEAGUE_ID = "league_id"
+    GROUP = "group"
