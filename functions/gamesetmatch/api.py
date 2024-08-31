@@ -8,18 +8,31 @@ from google.cloud.firestore_v1.base_query import FieldFilter
 from datetime import datetime
 import logging
 import json
-from typing import Dict,Any
+from typing import Dict,Optional,Any
 
 app = initialize_app(options={"projectId":"gamesetmatch-ef350"})
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # Set to DEBUG or INFO as needed
 
-def getPlayerDetails(req: https_fn.Request) -> https_fn.Response:
-    request_json = req.get_json()
+firestore_client: google.cloud.firestore.Client = firestore.client()
 
-    player_details = None
-    if player_details:
-        return https_fn.Response(json.dumps(player_details), status=200)
-    else:
-        return https_fn.Response("Player not found", status=404)
+def getPlayerDetails(player_id: str) -> Optional[Dict[str, Any]]: 
+    """
+    Retrieves the details of a specific player from the Firestore database.
+    
+    Args:
+        player_id (str): The unique identifier of the player.
+
+    Returns:
+        Optional[Dict[str, Any]]: A dictionary containing the player's details if they exist, 
+                                  otherwise None.
+    """
+    try:
+        player_details = get_player_document(player_id)
+        return player_details
+
+    except Exception as e:
+        logger.error(f"Error in getPlayerDetails for player_id={player_id}: {e}")
+        raise
+        
