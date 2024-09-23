@@ -1,21 +1,17 @@
 #3rd party API imports
 from firebase_functions import https_fn
-from firebase_admin import firestore, initialize_app
-#from firebase_functions import logger
-from google.cloud.firestore_v1.base_query import FieldFilter
+
+#local imports
+from gamesetmatch.firestore_accessor import get_player_document
 
 # python lib imports
-from datetime import datetime
 import logging
-import json
 from typing import Dict,Optional,Any
 
-app = initialize_app(options={"projectId":"gamesetmatch-ef350"})
+#initialize_app(options={"projectId": PROJECT_ID})
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # Set to DEBUG or INFO as needed
-
-firestore_client: google.cloud.firestore.Client = firestore.client()
 
 def getPlayerDetails(player_id: str) -> Optional[Dict[str, Any]]: 
     """

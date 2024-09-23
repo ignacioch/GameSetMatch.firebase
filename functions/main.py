@@ -1,4 +1,4 @@
-import gamesetmatch.api_old as api_old
+import gamesetmatch.api as api
 
 from firebase_functions import https_fn
 
@@ -8,6 +8,19 @@ import json
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # Set to DEBUG or INFO as needed
+
+#from dotenv import load_dotenv
+# Add this line to check if FUNCTIONS_EMULATOR is set
+import os
+# Load environment variables from .env file
+#load_dotenv()x
+
+print(f"FUNCTIONS_EMULATOR is set: {os.getenv('FUNCTIONS_EMULATOR')}")
+
+if os.getenv('FUNCTIONS_EMULATOR'):
+    print("Running in the emulator")
+else:
+    print("Running in production")
 
 
 @https_fn.on_request()
@@ -36,6 +49,7 @@ def getPlayerDetails(req: https_fn.Request) -> https_fn.Response:
         return https_fn.Response("player_id parameter is required", status=400)
 
     try:
+        print("Initializing Firebase Admin SDK...")
         # Call the api function to get the player details
         player_details = api.getPlayerDetails(player_id)
         
