@@ -9,20 +9,6 @@ import json
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # Set to DEBUG or INFO as needed
 
-#from dotenv import load_dotenv
-# Add this line to check if FUNCTIONS_EMULATOR is set
-import os
-# Load environment variables from .env file
-#load_dotenv()x
-
-print(f"FUNCTIONS_EMULATOR is set: {os.getenv('FUNCTIONS_EMULATOR')}")
-
-if os.getenv('FUNCTIONS_EMULATOR'):
-    print("Running in the emulator")
-else:
-    print("Running in production")
-
-
 @https_fn.on_request()
 def getPlayerDetails(req: https_fn.Request) -> https_fn.Response:
     """
