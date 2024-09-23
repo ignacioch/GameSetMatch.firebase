@@ -8,8 +8,6 @@ from gamesetmatch.firestore_accessor import get_player_document
 import logging
 from typing import Dict,Optional,Any
 
-#initialize_app(options={"projectId": PROJECT_ID})
-
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # Set to DEBUG or INFO as needed
 
