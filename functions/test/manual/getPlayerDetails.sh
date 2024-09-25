@@ -1,46 +1,66 @@
 #!/bin/bash
 
-# Set the deployed URL (replace with your actual Firebase function URL)
-DEPLOYED_URL="https://us-central1-gamesetmatch-ef350.cloudfunctions.net/getPlayerDetails"
-
-# Set the local emulator URL (default port 5001, adjust if necessary)
-LOCAL_URL="http://localhost:5001/gamesetmatch-ef350/us-central1/getPlayerDetails"
-
 # Function to show script usage
 show_usage() {
-    echo "Usage: $0 --local | --remote <player_id>"
-    echo "  --local    Test against the local Firebase emulator."
-    echo "  --remote   Test against the deployed Firebase function."
-    echo "  <player_id> The ID of the player to fetch."
+    echo "Usage: $0 --local | --remote --player_id <player_id> | --uid <uid>"
+    echo "  --local            Test against the local Firebase emulator."
+    echo "  --remote           Test against the deployed Firebase function."
+    echo "  --player_id <id>   Pass the player_id to search by."
+    echo "  --uid <uid>        Pass the uid to search by."
     exit 1
 }
 
-# Check if the correct number of arguments is passed
-if [ "$#" -ne 2 ]; then
+# Check if correct number of arguments is passed
+if [ "$#" -lt 3 ]; then
     show_usage
 fi
 
-# Get the player ID from the second argument
-PLAYER_ID="$2"
+DEPLOYED_URL="https://us-central1-gamesetmatch-ef350.cloudfunctions.net/getPlayerDetails"
+LOCAL_URL="http://localhost:5001/gamesetmatch-ef350/us-central1/getPlayerDetails"
 
-# Determine the environment based on the argument
+# Initialize variables for the environment and query parameters
+URL=""
+QUERY_PARAM=""
+
+# Process the arguments
 case "$1" in
     --local)
         URL=$LOCAL_URL
-        echo "Testing on the local emulator..."
         ;;
     --remote)
         URL=$DEPLOYED_URL
-        echo "Testing on the deployed Firebase function..."
         ;;
     *)
-        echo "Invalid argument."
+        echo "Invalid environment argument."
         show_usage
         ;;
 esac
 
+# Check for either --player_id or --uid
+case "$2" in
+    --player_id)
+        if [ -z "$3" ]; then
+            echo "player_id value is missing."
+            show_usage
+        fi
+        QUERY_PARAM="player_id=$3"
+        ;;
+    --uid)
+        if [ -z "$3" ]; then
+            echo "uid value is missing."
+            show_usage
+        fi
+        QUERY_PARAM="uid=$3"
+        ;;
+    *)
+        echo "Invalid search parameter."
+        show_usage
+        ;;
+esac
+
+echo "$URL"
 # Make the GET request and store the response
-response=$(curl -s -w "\nHTTP Status: %{http_code}\n" "$URL?player_id=$PLAYER_ID")
+response=$(curl -s -w "\nHTTP Status: %{http_code}\n" "$URL?$QUERY_PARAM")
 
 # Output the response
 echo "$response"

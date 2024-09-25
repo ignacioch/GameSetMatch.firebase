@@ -1,7 +1,16 @@
+# python imports
+import logging
 import os
 from typing import Optional, Dict, Any
+
+# 3rd party imports
 from firebase_admin import firestore, initialize_app, credentials
-import logging
+
+#local imports
+from gamesetmatch.models.player import Player
+from gamesetmatch.models.player_info import PlayerInfo
+from gamesetmatch.models.tennis_match import TennisMatch
+from gamesetmatch.models.league import League
 
 # Initialize logging
 logger = logging.getLogger(__name__)
@@ -9,8 +18,6 @@ logger.setLevel(logging.DEBUG)
 
 # Define your project ID
 PROJECT_ID = "gamesetmatch-ef350"
-
-print("Initializing Firebase Admin SDK...")
 
 ''' Things I tried to make ADC work
 #if os.getenv('FUNCTIONS_EMULATOR'):
@@ -50,11 +57,36 @@ def get_player_document(player_id: str) -> Optional[Dict[str, Any]]:
         player_doc = player_ref.get()
         
         if player_doc.exists:
-            return player_doc.to_dict()
-        else:
-            logger.info(f"No player found with ID: {player_id}")
-            return None
+            player_data = player_doc.to_dict()
+            return Player.from_dict(player_id, player_data)  # Use from_dict to map data to Player object
+        logger.info(f"No player found with player_id={player_id}")
+        return None
 
     except Exception as e:
         logger.error(f"Error retrieving player details for player_id={player_id}: {e}")
+        raise
+
+def get_player_by_uid(uid: str) -> Optional[Player]:
+    """
+    Retrieves a player's document from the Firestore database.
+
+    Args:
+        uuid (str): The unique user identifier of the player.
+
+    Returns:
+        Optional[Dict[str, Any]]: A dictionary containing the player's details if they exist,
+                                  otherwise None.
+    """
+    try:
+        players_ref = firestore_client.collection('players')
+        query = players_ref.where('uid', '==', uid).limit(1)
+        results = query.get()
+
+        for doc in results:
+            player_data = doc.to_dict()
+            return Player.from_dict(doc.id, player_data)
+        logger.info(f"No player found with uid={uid}")
+        return None
+    except Exception as e:
+        logger.error(f"Error retrieving player details for uid={uid}: {e}")
         raise
