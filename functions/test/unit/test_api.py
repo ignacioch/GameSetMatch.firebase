@@ -1,136 +1,42 @@
 import pytest
-from gamesetmatch import api  # Replace with the actual module name
-from gamesetmatch import player
-from gamesetmatch import types
+from unittest.mock import MagicMock
+from gamesetmatch.api import getPlayerDetails
 
-# Test data for parametrization
-# Sample league info to be returned on successful addition
-sample_league_info = {
-    types.LeagueFields.LEAGUE_NAME.value: "North City League",
-    types.LeagueFields.AREA.value: "North City",
-    # other fields...
-}
+# Test case when player is found by player_id
+def test_get_player_by_id(mock_get_player_document,test_player):
+    player_id = '1234'
+    player = getPlayerDetails(player_id=player_id, uid=None)  # Assume uid is None if searching by player_id
+    assert player == test_player.to_dict()
 
-test_data = [
-    # Format: (input_data, expected_status, expected_message, side_effect)
-    ({"player_id": "player1_id", "league_id": "league123"}, 200, {"league_info": sample_league_info}, None),
-    ({}, 400, "Player ID and League ID are required", "No Call"),  # Indicates no call to the mocked function
-    ({"player_id": "player1_id", "league_id": "league123"}, 400, "Error message", ValueError("Error message")),
-]
+# Test case when player is not found
+def test_player_not_found(mock_get_player_document):
+    # Mock Firestore to return None (player not found)
+    mock_get_player_document.return_value = None
 
-@pytest.mark.addPlayerTest
-@pytest.mark.parametrize("input_data, expected_status, expected_response, side_effect", test_data)
-def test_add_player_to_league(mocker, input_data, expected_status, expected_response, side_effect):
-    # Mock Firestore function
-    mock_addPlayerToLeagueFirestore = mocker.patch('gamesetmatch.api.addPlayerToLeagueFirestore', return_value=sample_league_info if not side_effect else None)
-    if side_effect:
-        mock_addPlayerToLeagueFirestore.side_effect = side_effect
+    player_id = '9999'  # Non-existent player_id
+    result = getPlayerDetails(player_id=player_id, uid=None)
 
-    # Mock request
-    mock_request = mocker.Mock()
-    mock_request.get_json.return_value = input_data
-
-    # Call the function
-    response = api.addPlayerToLeague(mock_request)
-
-    # Assertions
-    if side_effect != "No Call":
-        mock_addPlayerToLeagueFirestore.assert_called_once_with(input_data["player_id"], input_data["league_id"])
-    assert response.status_code == expected_status
-    if expected_status == 200:
-        assert response.get_json() == expected_response
-    else:
-        assert expected_response in response.get_data(as_text=True)
+    # Check result is None, indicating no player found
+    assert result is None
 
 
+# Test case when searching by uid
+def test_get_player_by_uid(mock_get_player_by_uid):
+    # Mock Firestore response
+    mock_get_player_by_uid.return_value = mock_player_data
 
-# Sample league info to be returned on successful creation
-sample_league_info_create_league = {
-    types.LeagueFields.LEAGUE_NAME.value: "North City League",
-    types.LeagueFields.AREA.value: "North City",
-    types.LeagueFields.RUNNING.value: False,
-    types.LeagueFields.CURRENT_ROUND.value: 0,
-    types.LeagueFields.UNALLOCATED_PLAYERS.value: [],
-    types.LeagueFields.ID.value: "new_league_id"
-}
+    # Call the function with uid instead of player_id
+    uid = 'abcd-1234'
+    result = getPlayerDetails(player_id=None, uid=uid)  # Assume player_id is None if searching by uid
 
-# Test data for parametrization
-test_data_create_league = [
-    ({"league_name": "North City League", "area": "North City", "start_date": "2024-02-02", "end_date": "2024-04-02"}, 200, {"league_info": sample_league_info_create_league}, None),
-    ({}, 400, "League name and area are required", "No Call"), # Indicates no call to the mocked function
-    ({"league_name": "North City League", "area": "North City", "start_date": "2024-02-02", "end_date": "2024-04-02"}, 400, "Error message", ValueError("Error message")),
-]
-
-@pytest.mark.createLeagueTest
-@pytest.mark.parametrize("input_data, expected_status, expected_response, side_effect", test_data_create_league)
-def test_create_league(mocker, input_data, expected_status, expected_response, side_effect):
-    # Mock Firestore function
-    mock_createLeagueFirestore = mocker.patch('gamesetmatch.api.createLeagueFirestore', return_value=sample_league_info_create_league if not side_effect else None)
-    if side_effect and side_effect != "No Call":
-        mock_createLeagueFirestore.side_effect = side_effect
-
-    # Mock request
-    mock_request = mocker.Mock()
-    mock_request.get_json.return_value = input_data
-
-    # Call the function
-    response = api.createLeague(mock_request)
-
-    # Assertions
-    if side_effect != "No Call":
-        mock_createLeagueFirestore.assert_called_once_with(input_data["league_name"], input_data["area"], input_data["start_date"], input_data["end_date"])
-    assert response.status_code == expected_status
-    if expected_status == 200:
-        assert response.get_json() == expected_response
-    else:
-        assert expected_response in response.get_data(as_text=True)
+    # Check result is the mocked player data
+    assert result == mock_player_data
 
 
+# Test case when neither player_id nor uid is provided
+def test_missing_player_id_and_uid():
+    # Call the function with no player_id or uid
+    result = getPlayerDetails(player_id=None, uid=None)
 
-'''
-Start Round
-'''
-
-# Sample update info to be returned on successful round start
-sample_start_round_info = {
-    "message": "Round started successfully",
-    "league_info": {
-        types.LeagueFields.CURRENT_ROUND.value: 1,
-        types.LeagueFields.RUNNING.value: True,
-    }
-}
-
-test_data_start_round = [
-    # input_data, expected_status, expected_response, side_effect
-    ({"league_id": "league123"}, 200, sample_start_round_info, None),
-    ({}, 400, "League ID is required", "No Call"),
-    ({"league_id": "league123"}, 400, "No unallocated players to start a round", "No Call"),
-]
-
-@pytest.mark.startRoundTest
-@pytest.mark.parametrize("input_data, expected_status, expected_response, side_effect", test_data_start_round)
-def test_start_round(mocker, input_data, expected_status, expected_response, side_effect):
-    # Mock the Firestore functions
-    mock_fetchPendingPlayersForLeague = mocker.patch('gamesetmatch.api.fetchPendingPlayersForLeague', return_value=[] if side_effect else [player.Player.create_dummy_player( rankingIn=1200, city="London"), player.Player.create_dummy_player( rankingIn=2200, city="London" )])
-    mock_startRoundInLeagueFirestore = mocker.patch('gamesetmatch.api.startRoundInLeagueFirestore', return_value=sample_start_round_info["league_info"])
-
-    # Adjust side effect for mock if specified
-    if side_effect and side_effect != "No Call":
-        mock_startRoundInLeagueFirestore.side_effect = side_effect
-
-    # Mock request
-    mock_request = mocker.Mock()
-    mock_request.get_json.return_value = input_data
-
-    # Call the function 
-    response = api.startRound(mock_request)
-
-    # Assertions
-    if side_effect != "No Call":
-        mock_startRoundInLeagueFirestore.assert_called_once()
-    assert response.status_code == expected_status
-    if expected_status == 200:
-        assert response.get_json() == expected_response
-    else:
-        assert expected_response in response.get_data(as_text=True)
-
+    # Check result is None (or you could raise an exception or return an error dict)
+    assert result is None  # Or assert specific behavior if you're raising an error

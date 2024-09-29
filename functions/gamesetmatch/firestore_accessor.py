@@ -41,7 +41,7 @@ initialize_app(cred)
 # Initialize Firestore client
 firestore_client = firestore.client()
 
-def get_player_document(player_id: str) -> Optional[Dict[str, Any]]:
+def get_player_document(player_id: str) -> Optional[Player]:
     """
     Retrieves a player's document from the Firestore database.
 
@@ -49,8 +49,7 @@ def get_player_document(player_id: str) -> Optional[Dict[str, Any]]:
         player_id (str): The unique identifier of the player.
 
     Returns:
-        Optional[Dict[str, Any]]: A dictionary containing the player's details if they exist,
-                                  otherwise None.
+        Optional[Player]: A Player object if found, otherwise None.
     """
     try:
         player_ref = firestore_client.collection('players').document(player_id)
