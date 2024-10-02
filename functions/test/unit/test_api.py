@@ -1,42 +1,94 @@
 import pytest
-from unittest.mock import MagicMock
+from unittest.mock import Mock
 from gamesetmatch.api import getPlayerDetails
-
-# Test case when player is found by player_id
-def test_get_player_by_id(mock_get_player_document,test_player):
-    player_id = '1234'
-    player = getPlayerDetails(player_id=player_id, uid=None)  # Assume uid is None if searching by player_id
-    assert player == test_player.to_dict()
-
-# Test case when player is not found
-def test_player_not_found(mock_get_player_document):
-    # Mock Firestore to return None (player not found)
-    mock_get_player_document.return_value = None
-
-    player_id = '9999'  # Non-existent player_id
-    result = getPlayerDetails(player_id=player_id, uid=None)
-
-    # Check result is None, indicating no player found
-    assert result is None
+from gamesetmatch.models.player import Player,PlayerInfo
 
 
-# Test case when searching by uid
-def test_get_player_by_uid(mock_get_player_by_uid):
-    # Mock Firestore response
-    mock_get_player_by_uid.return_value = mock_player_data
+# Parametrized Test Case
+@pytest.mark.parametrize(
+    "player_id, uid, mock_player_data, expected_result, expected_exception",
+    [
+        # Test 1 : player is found
+        (
+            '1234',  
+            None,
+            {
+                "player_id": "1234",
+                "info": {
+                    "name": "John Doe",
+                    "email": "john.doe@example.com",
+                    "profile_picture_url": "http://example.com/johndoe.jpg",
+                    "date_of_birth": "1990-01-01T00:00:00Z"
+                },
+                "tennis": {
+                    "singles": {
+                        "matches": [],
+                        "leagues": []
+                    }
+                }
+            },
+            {
+                "player_id": "1234",
+                "info": {
+                    "name": "John Doe",
+                    "email": "john.doe@example.com",
+                    "profile_picture_url": "http://example.com/johndoe.jpg",
+                    "date_of_birth": "1990-01-01T00:00:00Z"
+                },
+                "tennis": {
+                    "singles": {
+                        "matches": [],
+                        "leagues": []
+                    }
+                }
+            },
+            None #No Exception
+        ),
+        # Test 2 : plaer is not found
+        (
+            '9999',  # Case where player is not found (return None)
+            None,
+            None,
+            None,
+            None #No Exception
+        ),
+        # Test 3 : uid not found
+        (
+            None,  
+            'uid123', 
+            None,
+            None,
+            None #No Exception
+        ),
+        # Test 4: both Missing
+        (
+            None,  
+            None,
+            None,
+            None,
+            ValueError
+        ),
+    ]
+)
+def test_get_player_details(mock_get_player_document, mock_get_player_by_uid, player_id, uid, mock_player_data, expected_result, expected_exception):
+    # Create a mock Player object if mock_player_data is provided
+    if mock_player_data:
+        mock_player_info = PlayerInfo(**mock_player_data['info'])
+        mock_player = Player(player_id=mock_player_data['player_id'], info=mock_player_info)
+    else:
+        mock_player = None
 
-    # Call the function with uid instead of player_id
-    uid = 'abcd-1234'
-    result = getPlayerDetails(player_id=None, uid=uid)  # Assume player_id is None if searching by uid
-
-    # Check result is the mocked player data
-    assert result == mock_player_data
-
-
-# Test case when neither player_id nor uid is provided
-def test_missing_player_id_and_uid():
-    # Call the function with no player_id or uid
-    result = getPlayerDetails(player_id=None, uid=None)
-
-    # Check result is None (or you could raise an exception or return an error dict)
-    assert result is None  # Or assert specific behavior if you're raising an error
+    # Set up the mocks based on whether player_id or uid is provided
+    if player_id:
+        mock_get_player_document.return_value = mock_player
+    elif uid:
+        mock_get_player_by_uid.return_value = mock_player
+    
+    # Check if we expect an exception
+    if expected_exception:
+        with pytest.raises(expected_exception):
+            getPlayerDetails(player_id=player_id, uid=uid)
+    else:
+        result = getPlayerDetails(player_id=player_id, uid=uid)
+        # Assert the result matches the expected result
+        assert result == expected_result
