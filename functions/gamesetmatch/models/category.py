@@ -1,3 +1,6 @@
+from gamesetmatch.models.match import Match
+from gamesetmatch.models.league import League
+
 class Category:
     def __init__(self, matches: dict[str, 'Match'], leagues: list['League']):
         self.matches = matches  # Dictionary with match ID as key, Match object as value
