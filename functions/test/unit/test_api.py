@@ -20,12 +20,7 @@ from gamesetmatch.models.player import Player,PlayerInfo
                     "profile_picture_url": "http://example.com/johndoe.jpg",
                     "date_of_birth": "1990-01-01T00:00:00Z"
                 },
-                "tennis": {
-                    "singles": {
-                        "matches": [],
-                        "leagues": []
-                    }
-                }
+                "sports" : {}
             },
             {
                 "player_id": "1234",
@@ -35,12 +30,7 @@ from gamesetmatch.models.player import Player,PlayerInfo
                     "profile_picture_url": "http://example.com/johndoe.jpg",
                     "date_of_birth": "1990-01-01T00:00:00Z"
                 },
-                "tennis": {
-                    "singles": {
-                        "matches": [],
-                        "leagues": []
-                    }
-                }
+                "sports" : {}
             },
             None #No Exception
         ),

@@ -1,73 +1,78 @@
-# test_player.py
 import pytest
-from gamesetmatch.player import Player
+from gamesetmatch.models.player import Player
+from gamesetmatch.models.player_info import PlayerInfo
+from gamesetmatch.models.sport import Sport
+from gamesetmatch.models.category import Category
+from gamesetmatch.models.match import Match
+from gamesetmatch.models.league import League
 
-# Sample data for testing
-players_info = [
-    Player.create_dummy_player(id="player1", rankingIn=1200, city="London"),
-    Player.create_dummy_player(id="player2", rankingIn=1500, city="London"),
-    Player.create_dummy_player(id="player3", rankingIn=900, city="London"),
-    Player.create_dummy_player(id="player4", rankingIn=1800, city="London"),
-    Player.create_dummy_player(id="player5", rankingIn=1100, city="London"),
-    Player.create_dummy_player(id="player6", rankingIn=1300, city="London"),
-    Player.create_dummy_player(id="player7", rankingIn=1000, city="London"),
-    Player.create_dummy_player(id="player8", rankingIn=1600, city="London"),
-    Player.create_dummy_player(id="player9", rankingIn=1400, city="London")
-]
+@pytest.fixture
+def mock_player_data():
+    return {
+        "info": {
+            "name": "John Doe",
+            "email": "john.doe@example.com",
+            "profile_picture_url": "http://example.com/johndoe.jpg",
+            "date_of_birth": "1990-01-01"
+        },
+        "sports": {
+            "tennis": {
+                "sport_name": "tennis",
+                "singles": {
+                    "matches": {
+                        "match1": {
+                            "match_id": "match1",
+                            "opponent": "Opponent A",
+                            "score": "6-3, 6-4",
+                            "result": "win",
+                            "date": "2024-01-01",
+                            "surface": "clay"
+                        }
+                    },
+                    "leagues": [
+                        {"league_id": "league1", "name": "Tennis League A"}
+                    ]
+                },
+                "doubles": {
+                    "matches": {},
+                    "leagues": []
+                }
+            }
+        }
+    }
 
-players_info_4 = [
-    Player.create_dummy_player(id="player1", rankingIn=1200, city="London"),
-    Player.create_dummy_player(id="player2", rankingIn=1500, city="London"),
-    Player.create_dummy_player(id="player3", rankingIn=900, city="London"),
-    Player.create_dummy_player(id="player4", rankingIn=1800, city="London")
-]
+def test_player_from_dict(mock_player_data):
+    player_id = "1234"
+    
+    # Create Player object using from_dict
+    player = Player.from_dict(player_id, mock_player_data)
+    
+    assert player.player_id == player_id
+    assert player.info.name == "John Doe"
+    assert player.info.email == "john.doe@example.com"
+    assert player.sports["tennis"].sport_name == "tennis"
 
-players_info_13 = [
-    Player.create_dummy_player(id="player1", rankingIn=1200, city="London"),
-    Player.create_dummy_player(id="player2", rankingIn=1500, city="London"),
-    Player.create_dummy_player(id="player3", rankingIn=900, city="London"),
-    Player.create_dummy_player(id="player4", rankingIn=1800, city="London"),
-    Player.create_dummy_player(id="player5", rankingIn=1100, city="London"),
-    Player.create_dummy_player(id="player6", rankingIn=1300, city="London"),
-    Player.create_dummy_player(id="player7", rankingIn=1000, city="London"),
-    Player.create_dummy_player(id="player8", rankingIn=1600, city="London"),
-    Player.create_dummy_player(id="player9", rankingIn=1400, city="London"),
-    Player.create_dummy_player(id="player10", rankingIn=950, city="London"),
-    Player.create_dummy_player(id="player11", rankingIn=1250, city="London"),
-    Player.create_dummy_player(id="player12", rankingIn=1150, city="London"),
-    Player.create_dummy_player(id="player13", rankingIn=1350, city="London")
-]
+    # Check matches and leagues
+    assert len(player.sports["tennis"].singles.matches) == 1
+    assert player.sports["tennis"].singles.matches["match1"].match_id == "match1"
 
-@pytest.mark.unit
-@pytest.mark.player
-@pytest.mark.parametrize("players_info, expected_groups", [
-    # Test case with 4 players, expecting 1 group
-    (players_info_4, {
-        "group_1": ["player4", "player2", "player1", "player3"],
-    }),
-    # Test case with 9 players from previous example, expecting 2 groups
-    (players_info, {
-        "group_1": ["player4", "player8", "player2", "player9", "player6"],
-        "group_2": ["player1", "player5", "player7", "player3"],
-    }),
-    ## Test case with 13 players, expecting 2 groups (7 + 6)
-    (players_info_13, {
-        "group_1": ["player4", "player8", "player2", "player9", "player13", "player6", "player11"],
-        "group_2": ["player1", "player12", "player5", "player7", "player10", "player3"],
-    }),
-])
-def test_sort_and_group_players(players_info, expected_groups):
-    sorted_groups = Player.sort_and_group_players(players_info)
-    assert sorted_groups == expected_groups
+def test_player_to_dict(mock_player_data):
+    player_id = "1234"
+    player = Player.from_dict(player_id, mock_player_data)
+    
+    player_dict = player.to_dict()
+    
+    assert player_dict["player_id"] == player_id
+    assert player_dict["info"]["name"] == "John Doe"
+    assert player_dict["sports"]["tennis"]["sport_name"] == "tennis"
 
-@pytest.mark.unit
-@pytest.mark.player
-@pytest.mark.parametrize("player_count, expected_distribution", [
-    (4, [4]),  # 4 players -> 1 group of 4
-    (9, [5, 4]),  # 9 players -> 1 group of 5, 1 group of 4
-    (13, [7, 6]),  # 13 players -> 1 group of 7, 1 group of 6
-    (28, [6, 6, 6, 5, 5]),  # 28 players -> 3 groups of 6, 2 groups of 5
-])
-def test_distribute_players(player_count, expected_distribution):
-    result = Player.distribute_players(player_count)
-    assert result == expected_distribution, f"Expected distribution for {player_count} players is {expected_distribution}, got {result} instead."
+    # Check matches and leagues
+    assert player_dict["sports"]["tennis"]["singles"]["matches"]["match1"]["match_id"] == "match1"
+
+def test_player_str_repr(mock_player_data):
+    player_id = "1234"
+    player = Player.from_dict(player_id, mock_player_data)
+    
+    # String and repr assertions
+    assert str(player) == f"Player(player_id=1234, info={player.info}, sports=[tennis: {str(player.sports['tennis'])}])"
+    assert repr(player) == f"Player(player_id=1234, info={repr(player.info)}, sports=[tennis: {repr(player.sports['tennis'])}])"
