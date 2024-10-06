@@ -44,8 +44,8 @@ def getPlayerDetails(req: https_fn.Request) -> https_fn.Response:
             # Player not found, return 404
             logger.info(f"Player with player_id={player_id}/uid={uid} not found.")
             return https_fn.Response(
-                json.dumps({"error": "Player not found"}),
-                status=404,
+                json.dumps({"message": "Player not found"}),
+                status=200,
                 content_type="application/json"
             )
 
