@@ -6,12 +6,11 @@ from gamesetmatch.models.player import Player,PlayerInfo
 
 # Parametrized Test Case
 @pytest.mark.parametrize(
-    "player_id, uid, mock_player_data, expected_result, expected_exception",
+    "uid, mock_player_data, expected_result, expected_exception",
     [
         # Test 1 : player is found
         (
             '1234',  
-            None,
             {
                 "player_id": "1234",
                 "info": {
@@ -32,19 +31,10 @@ from gamesetmatch.models.player import Player,PlayerInfo
                 },
                 "sports" : {}
             },
-            None #No Exception
-        ),
-        # Test 2 : plaer is not found
-        (
-            '9999',  # Case where player is not found (return None)
-            None,
-            None,
-            None,
             None #No Exception
         ),
         # Test 3 : uid not found
         (
-            None,  
             'uid123', 
             None,
             None,
@@ -52,7 +42,6 @@ from gamesetmatch.models.player import Player,PlayerInfo
         ),
         # Test 4: both Missing
         (
-            None,  
             None,
             None,
             None,
@@ -60,7 +49,7 @@ from gamesetmatch.models.player import Player,PlayerInfo
         ),
     ]
 )
-def test_get_player_details(mock_get_player_document, mock_get_player_by_uid, player_id, uid, mock_player_data, expected_result, expected_exception):
+def test_get_player_details(mock_get_player_by_uid, uid, mock_player_data, expected_result, expected_exception):
     # Create a mock Player object if mock_player_data is provided
     if mock_player_data:
         mock_player_info = PlayerInfo(**mock_player_data['info'])
@@ -69,16 +58,14 @@ def test_get_player_details(mock_get_player_document, mock_get_player_by_uid, pl
         mock_player = None
 
     # Set up the mocks based on whether player_id or uid is provided
-    if player_id:
-        mock_get_player_document.return_value = mock_player
-    elif uid:
+    if uid:
         mock_get_player_by_uid.return_value = mock_player
     
     # Check if we expect an exception
     if expected_exception:
         with pytest.raises(expected_exception):
-            getPlayerDetails(player_id=player_id, uid=uid)
+            getPlayerDetails(uid=uid)
     else:
-        result = getPlayerDetails(player_id=player_id, uid=uid)
+        result = getPlayerDetails(uid=uid)
         # Assert the result matches the expected result
         assert result == expected_result

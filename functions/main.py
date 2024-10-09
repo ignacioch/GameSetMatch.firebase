@@ -29,20 +29,19 @@ def getPlayerDetails(req: https_fn.Request) -> https_fn.Response:
     # GET request
     # Extract player_id from the query parameters
     logger.info(req)
-    player_id = req.args.get('player_id')
     uid = req.args.get('uid')
-    logger.info(f"Calling getPlayerDetails for player_id={player_id},uid={uid}")
-    if not player_id and not uid:
-        logger.warning("player_id or uid parameter is missing.")
-        return https_fn.Response("Either player_id or uid is required", status=400)
+    logger.info(f"Calling getPlayerDetails for uid={uid}")
+    if not uid:
+        logger.warning("uid parameter is missing.")
+        return https_fn.Response("UID is required", status=400)
 
     try:
         # Call the api function to get the player details
-        player_details = api.getPlayerDetails(player_id=player_id, uid=uid)
+        player_details = api.getPlayerDetails(uid=uid)
         
         if player_details is None:
             # Player not found, return 404
-            logger.info(f"Player with player_id={player_id}/uid={uid} not found.")
+            logger.info(f"Player with uid={uid} not found.")
             return https_fn.Response(
                 json.dumps({"message": "Player not found"}),
                 status=200,

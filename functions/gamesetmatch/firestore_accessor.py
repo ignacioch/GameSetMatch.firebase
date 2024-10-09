@@ -41,30 +41,6 @@ initialize_app(cred)
 # Initialize Firestore client
 firestore_client = firestore.client()
 
-def get_player_document(player_id: str) -> Optional[Player]:
-    """
-    Retrieves a player's document from the Firestore database.
-
-    Args:
-        player_id (str): The unique identifier of the player.
-
-    Returns:
-        Optional[Player]: A Player object if found, otherwise None.
-    """
-    try:
-        player_ref = firestore_client.collection('players').document(player_id)
-        player_doc = player_ref.get()
-        
-        if player_doc.exists:
-            player_data = player_doc.to_dict()
-            return Player.from_dict(player_id, player_data)  # Use from_dict to map data to Player object
-        logger.info(f"No player found with player_id={player_id}")
-        return None
-
-    except Exception as e:
-        logger.error(f"Error retrieving player details for player_id={player_id}: {e}")
-        raise
-
 def get_player_by_uid(uid: str) -> Optional[Player]:
     """
     Retrieves a player's document from the Firestore database.
@@ -73,19 +49,19 @@ def get_player_by_uid(uid: str) -> Optional[Player]:
         uuid (str): The unique user identifier of the player.
 
     Returns:
-        Optional[Dict[str, Any]]: A dictionary containing the player's details if they exist,
-                                  otherwise None.
+        Optional[Player]: A Player object if found, otherwise None.
     """
     try:
-        players_ref = firestore_client.collection('players')
-        query = players_ref.where('uid', '==', uid).limit(1)
-        results = query.get()
+        player_ref = firestore_client.collection('players').document(uid)
+        player_doc = player_ref.get()
 
-        for doc in results:
-            player_data = doc.to_dict()
-            return Player.from_dict(doc.id, player_data)
-        logger.info(f"No player found with uid={uid}")
-        return None
+        if player_doc.exists:
+            player_data = player_doc.to_dict()
+            # Convert Firestore document data into a Player object
+            return Player.from_dict(uid, player_data)
+        else:
+            logger.info(f"No player found with UID: {uid}")
+            return None
     except Exception as e:
         logger.error(f"Error retrieving player details for uid={uid}: {e}")
         raise

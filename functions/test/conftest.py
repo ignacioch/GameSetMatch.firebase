@@ -21,10 +21,3 @@ def mock_request():
 @pytest.fixture
 def mock_get_player_by_uid(mocker):
     return mocker.patch('gamesetmatch.api.get_player_by_uid')
-
-# Mock Firestore accessor calls for get_player_document to return the real Player object
-@pytest.fixture
-def mock_get_player_document(mocker):
-    # Mock get_player_document to return the mocked document
-    mock = mocker.patch('gamesetmatch.api.get_player_document')
-    return mock

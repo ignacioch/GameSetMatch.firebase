@@ -2,7 +2,7 @@
 
 # Function to show script usage
 show_usage() {
-    echo "Usage: $0 --local | --remote --player_id <player_id> | --uid <uid>"
+    echo "Usage: $0 --local | --remote --uid <uid>"
     echo "  --local            Test against the local Firebase emulator."
     echo "  --remote           Test against the deployed Firebase function."
     echo "  --player_id <id>   Pass the player_id to search by."
@@ -38,13 +38,6 @@ esac
 
 # Check for either --player_id or --uid
 case "$2" in
-    --player_id)
-        if [ -z "$3" ]; then
-            echo "player_id value is missing."
-            show_usage
-        fi
-        QUERY_PARAM="player_id=$3"
-        ;;
     --uid)
         if [ -z "$3" ]; then
             echo "uid value is missing."
