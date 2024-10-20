@@ -46,6 +46,10 @@ class PlayerInfo:
         """
         Converts the PlayerInfo object into a dictionary format.
         """
+        level = self.level
+        if isinstance(self.level, Level) and self.level.value in ("beginner","intermediate","advanced","pro"):
+            level = self.level.value
+
         return {
             "name": self.name,
             "email": self.email,
@@ -53,7 +57,7 @@ class PlayerInfo:
             "date_of_birth": self.date_of_birth,
             "tel_number": self.tel_number,
             "areas": self.areas,
-            "level": self.level.value
+            "level": level
         }
 
     def __str__(self):

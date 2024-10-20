@@ -17,7 +17,10 @@ from gamesetmatch.models.player import Player,PlayerInfo
                     "name": "John Doe",
                     "email": "john.doe@example.com",
                     "profile_picture_url": "http://example.com/johndoe.jpg",
-                    "date_of_birth": "1990-01-01T00:00:00Z"
+                    "date_of_birth": "1990-01-01T00:00:00Z",
+                    "tel_number": "123-456-789",
+                    "areas": [10,20],
+                    "level": "beginner"
                 },
                 "sports" : {}
             },
@@ -27,7 +30,10 @@ from gamesetmatch.models.player import Player,PlayerInfo
                     "name": "John Doe",
                     "email": "john.doe@example.com",
                     "profile_picture_url": "http://example.com/johndoe.jpg",
-                    "date_of_birth": "1990-01-01T00:00:00Z"
+                    "date_of_birth": "1990-01-01T00:00:00Z",
+                    "tel_number": "123-456-789",
+                    "areas": [10,20],
+                    "level": "beginner"
                 },
                 "sports" : {}
             },

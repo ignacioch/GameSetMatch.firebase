@@ -18,13 +18,7 @@ class Player:
         """
         # Create PlayerInfo object
         info = PlayerInfo.from_dict(player_data["info"])
-        #    name=player_data["info"]["name"],
-        #    email=player_data["info"]["email"],
-        #    profile_picture_url=player_data["info"]["profile_picture_url"],
-        #    date_of_birth=player_data["info"]["date_of_birth"]
         player = cls(player_id=player_id, info=info)
-
-        # Populate sports
 
         # Populate sports
         for sport_name, sport_data in player_data.get("sports", {}).items():
