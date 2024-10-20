@@ -65,3 +65,20 @@ def get_player_by_uid(uid: str) -> Optional[Player]:
     except Exception as e:
         logger.error(f"Error retrieving player details for uid={uid}: {e}")
         raise
+
+
+def add_player_to_firestore(player: Player):
+    """
+    Adds a Player object to the Firestore database.
+
+    Args:
+        player (Player): The Player object to be added.
+    """
+    try:
+        logger.info(f"Attempting to add player with ID {player.player_id} to Firestore.")
+        player_ref = firestore_client.collection('players').document(player.player_id)
+        player_ref.set(player.to_dict())
+        logger.info(f"Player with ID {player.player_id} added successfully.")
+    except Exception as e:
+        logger.error(f"Error adding player with ID {player.player_id}: {e}")
+        raise
