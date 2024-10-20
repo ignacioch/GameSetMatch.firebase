@@ -54,33 +54,6 @@ firebase emulators:start --project gamesetmatch-ef350
 For details around the requests, follow the [Wiki](https://github.com/ignacioch/GameSetMatch.firebase/wiki/Requests)
 
 
-- Add a Match
-```bash
-curl -X POST [API_ENDPOINT]/addMatch -H "Content-Type: application/json" -d '{"player_a_id": "1", "player_b_id": "2", "score": "6-3, 6-4", "date": "2023-03-28", "location": "Court 1"}'
-```
-
-- Get Player Details
-```bash
-curl -X POST [API_ENDPOINT]/getPlayerDetails -H "Content-Type: application/json" -d '{"player_id": "1"}'
-```
-
-- Delete a Player
-
-```bash
-curl -X POST [API_ENDPOINT]/deletePlayer -H "Content-Type: application/json" -d '{"player_id": "1"}'
-```
-
-- Delete a Match
-```bash
-curl -X POST [API_ENDPOINT]/deleteMatch -H "Content-Type: application/json" -d '{"match_id": "1"}'
-```
-
-You can run the same commands in the `test/manual` folder.
-
-```bash
-deleteMatch.sh [--local] <args>
-```
-
 ## Deployment
 
 Make your changes and then run :

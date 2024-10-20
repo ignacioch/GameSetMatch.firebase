@@ -125,3 +125,49 @@ def addPlayer(req: https_fn.Request) -> https_fn.Response:
             status=500,
             content_type="application/json"
         )
+
+@https_fn.on_request()
+def addUser(req: https_fn.Request) -> https_fn.Response:
+    """
+    Adds a new user to the Firestore database.
+
+    Args:
+        req (https_fn.Request): The request object containing user details in JSON format.
+
+    Returns:
+        https_fn.Response: A JSON response indicating success or error status.
+    """
+    try:
+        # Parse the JSON request body
+        request_data = req.get_json()
+        logger.info(f"Received request to add user: {request_data}")
+
+        # Call the API layer to handle adding the user
+        success = api.addUser(request_data)
+
+        if success:
+            return https_fn.Response(
+                json.dumps({"message": "User added successfully"}),
+                status=200,
+                content_type="application/json"
+            )
+        else:
+            return https_fn.Response(
+                json.dumps({"error": "User with this UID already exists"}),
+                status=409,
+                content_type="application/json"
+            )
+    except ValueError as e:
+        logger.error(f"Validation error: {e}")
+        return https_fn.Response(
+            json.dumps({"error": str(e)}),
+            status=400,
+            content_type="application/json"
+        )
+    except Exception as e:
+        logger.error(f"Error adding user: {e}")
+        return https_fn.Response(
+            json.dumps({"error": "Internal Server Error"}),
+            status=500,
+            content_type="application/json"
+        )

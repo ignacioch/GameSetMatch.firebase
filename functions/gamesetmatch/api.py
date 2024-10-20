@@ -2,9 +2,10 @@
 from firebase_functions import https_fn
 
 #local imports
-from gamesetmatch.firestore_accessor import get_player_by_uid, add_player_to_firestore
+from gamesetmatch.firestore_accessor import get_player_by_uid, add_player_to_firestore, get_user_by_uid, add_user_to_firestore
 from gamesetmatch.models.player import Player
-from gamesetmatch.models.player_info import PlayerInfo, Level
+from gamesetmatch.models.player_info import PlayerInfo
+from gamesetmatch.models.user import User
 
 # python lib imports
 import logging
@@ -12,6 +13,21 @@ from typing import Dict,Optional,Any
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # Set to DEBUG or INFO as needed
+
+def __validate_user_existence(uid: str):
+    """
+    Validates if a user with the given UID exists in the Firestore users collection.
+
+    Args:
+        uid (str): The UID of the user.
+
+    Raises:
+        ValueError: If the user does not exist.
+    """
+    user_doc = get_user_by_uid(uid)
+    if not user_doc:
+        logger.error(f"User with UID {uid} does not exist.")
+        raise ValueError(f"User with UID {uid} does not exist.")
 
 def getPlayerDetails(uid: Optional[str]) -> Optional[dict]:
     """
@@ -25,11 +41,10 @@ def getPlayerDetails(uid: Optional[str]) -> Optional[dict]:
     """
     if not uid:
         raise ValueError("UID must be provided")
-
     try:
         # Directly access the player document by UID (which is the document ID)
         player = get_player_by_uid(uid)
-        
+        print(player)
         if not player:
             logger.info(f"No player found with UID={uid}.")
             return None
@@ -51,7 +66,10 @@ def addPlayer(request_data: dict) -> bool:
         bool: True if the player was added successfully, False if the email is already in use.
     """
     # Validate request data
+    # Validate request data
     logger.info(f"Validating request data: {request_data}")
+    __validate_user_existence(request_data["uid"])
+
     if "uid" not in request_data:
         logger.error("UID is required to add a player.")
         raise ValueError("UID is required to add a player.")
@@ -59,10 +77,6 @@ def addPlayer(request_data: dict) -> bool:
     # Extract and validate other details
     player_id = request_data["uid"]
     info = PlayerInfo.from_dict(request_data["info"])
-    level = Level(request_data["level"])  # Validates that level is within Enum choices
-    tel_number = request_data.get("tel_number")
-    area = request_data.get("area")
-    sports = request_data.get("sports", [])
 
     # Check if a player with the same email already exists
     existing_player = get_player_by_uid(player_id)
@@ -77,11 +91,7 @@ def addPlayer(request_data: dict) -> bool:
     # Create Player object
     player = Player(
         player_id=player_id,
-        info=info,
-        level=level,
-        tel_number=tel_number,
-        area=area,
-        sports=sports
+        info=info
     )
 
     # Add player to Firestore
@@ -89,4 +99,39 @@ def addPlayer(request_data: dict) -> bool:
     add_player_to_firestore(player)
 
     logger.info(f"Player with ID {player_id} added successfully.")
+    return True
+
+
+def addUser(request_data: dict) -> bool:
+    """
+    Adds a new user to Firestore using the provided data.
+
+    Args:
+        request_data (dict): A dictionary containing the user information.
+
+    Returns:
+        bool: True if the user was added successfully, False if the user already exists.
+    """
+    # Validate request data
+    logger.info(f"Validating request data: {request_data}")
+    if "uid" not in request_data:
+        logger.error("UID is required to add a user.")
+        raise ValueError("UID is required to add a user.")
+
+    uid = request_data["uid"]
+
+    # Check if user already exists
+    existing_user = get_user_by_uid(uid)
+    if existing_user:
+        logger.warning(f"User with UID {uid} already exists.")
+        return False
+
+    # Create User object
+    user = User.from_dict(request_data)
+
+    # Add user to Firestore
+    logger.info(f"Adding user with UID {uid} to Firestore")
+    add_user_to_firestore(user)
+
+    logger.info(f"User with UID {uid} added successfully.")
     return True

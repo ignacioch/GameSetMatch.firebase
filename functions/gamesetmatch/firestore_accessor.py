@@ -11,6 +11,8 @@ from gamesetmatch.models.player import Player
 from gamesetmatch.models.player_info import PlayerInfo
 from gamesetmatch.models.tennis_match import TennisMatch
 from gamesetmatch.models.league import League
+from gamesetmatch.models.user import User
+from gamesetmatch.constants import FirestoreCollections
 
 # Initialize logging
 logger = logging.getLogger(__name__)
@@ -52,7 +54,7 @@ def get_player_by_uid(uid: str) -> Optional[Player]:
         Optional[Player]: A Player object if found, otherwise None.
     """
     try:
-        player_ref = firestore_client.collection('players').document(uid)
+        player_ref = firestore_client.collection(FirestoreCollections.PLAYERS.value).document(uid)
         player_doc = player_ref.get()
 
         if player_doc.exists:
@@ -66,6 +68,25 @@ def get_player_by_uid(uid: str) -> Optional[Player]:
         logger.error(f"Error retrieving player details for uid={uid}: {e}")
         raise
 
+def get_user_by_uid(uid: str):
+    """
+    Retrieves a user's document from the Firestore database by UID.
+
+    Args:
+        uid (str): The UID of the user.
+
+    Returns:
+        DocumentSnapshot: The user document if found, otherwise None.
+    """
+    try:
+        user_doc = firestore_client.collection(FirestoreCollections.USERS.value).document(uid).get()
+        if user_doc.exists:
+            return user_doc
+        else:
+            return None
+    except Exception as e:
+        logger.error(f"Error retrieving user with UID {uid}: {e}")
+        raise
 
 def add_player_to_firestore(player: Player):
     """
@@ -76,9 +97,26 @@ def add_player_to_firestore(player: Player):
     """
     try:
         logger.info(f"Attempting to add player with ID {player.player_id} to Firestore.")
-        player_ref = firestore_client.collection('players').document(player.player_id)
+        player_ref = firestore_client.collection(FirestoreCollections.PLAYERS.value).document(player.player_id)
         player_ref.set(player.to_dict())
         logger.info(f"Player with ID {player.player_id} added successfully.")
     except Exception as e:
         logger.error(f"Error adding player with ID {player.player_id}: {e}")
+        raise
+
+
+def add_user_to_firestore(user: User):
+    """
+    Adds a User document to the Firestore database.
+
+    Args:
+        user (User): The User object to be added.
+    """
+    try:
+        logger.info(f"Attempting to add user with UID {user.uid} to Firestore.")
+        user_ref = firestore_client.collection(FirestoreCollections.USERS.value).document(user.uid)
+        user_ref.set(user.to_dict())
+        logger.info(f"User with UID {user.uid} added successfully.")
+    except Exception as e:
+        logger.error(f"Error adding user with UID {user.uid}: {e}")
         raise
