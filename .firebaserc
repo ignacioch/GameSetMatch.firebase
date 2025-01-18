@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "gamesetmatch-ef350"
-  }
+    "old": "gamesetmatch-ef350",
+    "prod": "gamesetmatch-657e5"
+  },
+  "targets": {},
+  "etags": {}
 }
