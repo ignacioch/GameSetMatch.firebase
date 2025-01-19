@@ -1,4 +1,4 @@
-import gamesetmatch.api_old as api_old
+import gamesetmatch.api as api
 
 from firebase_functions import https_fn
 
@@ -8,82 +8,6 @@ import json
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # Set to DEBUG or INFO as needed
-
-@https_fn.on_request()
-def getMatchDetails(req: https_fn.Request) -> https_fn.Response:
-    """
-    Retrieves details of a specific match or matches involving a specific player
-    from the Firestore database.
-
-    Accepts query parameters in an HTTP GET request with 'match_id' or 'player_id'
-    fields to specify the match(es) to be retrieved.
-
-    Returns:
-        https_fn.Response: A JSON response containing the requested match's details, or
-        a 'No matches found' message with a 404 status code if no matches meet the criteria.
-    """
-    return api_old.getMatchDetails(req)
-
-@https_fn.on_request()
-def addMatch(req: https_fn.Request) -> https_fn.Response:
-    """
-    Adds a new match record to the Firestore database.
-
-    Extracts match details from the JSON payload of an HTTP POST request. It requires
-    'player_a_id', 'player_b_id', 'score', 'date', and 'location' fields, and optionally
-    accepts a 'match_id'.
-
-    Args:
-        req (https_fn.Request): The request object containing JSON data for the match.
-
-    Returns:
-        https_fn.Response: A JSON response containing the newly added match's data,
-        including its Firestore ID, or an error message with an appropriate HTTP
-        status code on failure.
-    """
-    return api_old.addMatch(req)
-
-@https_fn.on_request()
-def registerPlayer(req: https_fn.Request) -> https_fn.Response:
-    """
-    Registers a new player and adds their information to the Firestore database.
-    
-    This function parses JSON data from the incoming HTTP POST request and creates
-    a new player entry in Firestore. The JSON payload must include the following fields:
-    - name (str): The name of the player.
-    - email (str): The email of the player.
-    - DOB (str): The date of birth of the player, in "YYYY-MM-DD" format.
-    - level (str): The skill level of the player.
-    - areas (list of str, optional): An array of strings, each representing an area ID where the player is interested in participating.
-
-    Args:
-        req (https_fn.Request): The request object containing JSON data with the player's information.
-
-    Returns:
-        https_fn.Response: A JSON response containing the newly created player's data,
-        including their unique Firestore ID, or an error message with an appropriate
-        HTTP status code on failure. The response includes the player's name, email,
-        date of birth (DOB), level, and areas of interest.
-    """
-    return api_old.registerPlayer(req)
-
-@https_fn.on_request()
-def getPlayerDetailsLegacy(req: https_fn.Request) -> https_fn.Response:
-    """
-    Retrieves details of a specific player from the Firestore database.
-
-    Accepts a JSON payload in an HTTP POST request with either 'player_id', 'name', or
-    'email' fields to specify the player to be retrieved.
-
-    Args:
-        req (https_fn.Request): The request object containing JSON data to identify the player.
-
-    Returns:
-        https_fn.Response: A JSON response containing the requested player's details, or
-        a 'Player not found' message with a 404 status code if the player does not exist.
-    """
-    return api_old.getPlayerDetails(req)
-
 
 @https_fn.on_request()
 def getPlayerDetails(req: https_fn.Request) -> https_fn.Response:
@@ -102,107 +26,156 @@ def getPlayerDetails(req: https_fn.Request) -> https_fn.Response:
         https_fn.Response: A JSON response containing the player's details if they exist,
         or a 404 status code with an appropriate message if they don't.
     """
+    # GET request
+    # Extract player_id from the query parameters
+    logger.info(req)
+    uid = req.args.get('uid')
+    logger.info(f"Calling getPlayerDetails for uid={uid}")
+    if not uid:
+        logger.warning("uid parameter is missing.")
+        return https_fn.Response("UID is required", status=400)
 
+    try:
+        # Call the api function to get the player details
+        player_details = api.getPlayerDetails(uid=uid)
+        
+        if player_details is None:
+            # Player not found, return 404
+            logger.info(f"Player with uid={uid} not found.")
+            return https_fn.Response(
+                json.dumps({"message": "Player not found"}),
+                status=200,
+                content_type="application/json"
+            )
 
-@https_fn.on_request()
-def deletePlayer(req: https_fn.Request) -> https_fn.Response:
-    """
-    Deletes a player from the Firestore database.
-
-    Requires a JSON payload in an HTTP POST request with the 'player_id' field
-    to specify which player to delete.
-
-    Args:
-        req (https_fn.Request): The request object containing JSON data with 'player_id'.
-
-    Returns:
-        https_fn.Response: A confirmation message upon successful deletion, or an error
-        message with an appropriate HTTP status code on failure.
-    """
-    return api_old.deletePlayer(req)
-
-@https_fn.on_request()
-def deleteMatch(req: https_fn.Request) -> https_fn.Response:
-    """
-    Deletes a match record from the Firestore database.
-
-    Requires a JSON payload in an HTTP POST request with the 'match_id' field
-    to specify which match to delete.
-
-    Args:
-        req (https_fn.Request): The request object containing JSON data with 'match_id'.
-
-    Returns:
-        https_fn.Response: A confirmation message upon successful deletion, or an error
-        message with an appropriate HTTP status code on failure.
-    """
-    return api_old.deleteMatch(req)
-
+        # Player exists, return their details
+        return https_fn.Response(
+            json.dumps(player_details),
+            status=200,
+            content_type="application/json"
+        )
+    except Exception as e:
+        logger.error(f"Error retrieving player details: {e}")
+        return https_fn.Response("Internal Server Error", status=500)
 
 @https_fn.on_request()
-def addPlayerToLeague(req: https_fn.Request) -> https_fn.Response:
+def addPlayer(req: https_fn.Request) -> https_fn.Response:
     """
-    Endpoint to add a player to a league.
+    Adds a new player to the Firestore database.
 
-    Expects a POST request with a JSON payload containing 'player_id' and 'league_id'.
-    Adds the player to the specified league and updates the league's list of players.
+    This function expects a POST request with a JSON body containing player details.
+    The player details should include:
+      - uid (required): Unique identifier for the player.
+      - info (required): A dictionary with player information like name and email.
+      - level (required): Player's level (e.g., beginner, intermediate, advanced, pro).
+      - tel_number (optional): The player's phone number.
+      - area (optional): An integer representing the area ID.
+      - sports (optional): A list of sports the player is interested in.
 
     Args:
-        req (https_fn.Request): The request object containing JSON data.
+        req (https_fn.Request): The request object containing player details in JSON format.
 
     Returns:
-        https_fn.Response: A JSON response confirming the addition of the player to the league,
-        or an error message with an appropriate HTTP status code on failure.
+        https_fn.Response: A JSON response indicating success or error status.
+    
+    Example:
+    (POST request)
+    {
+        "uid": "12345",
+        "info": {
+            "name": "John Doe",
+            "email": "john.doe@example.com"
+        },
+        "level": "beginner",
+        "tel_number": "123-456-7890",
+        "area": 10,
+        "sports": ["tennis", "pickleball"]
+    }
     """
-    return api_old.addPlayerToLeague(req)
+    # POST request
+    # Parse the JSON request body
+    logger.info(f"Received request: {req}")
+    try:
+        request_data = req.get_json()
+        logger.info(f"Parsed request data: {request_data}")
+
+        # Call the API layer to handle adding the player
+        response_data = api.addPlayer(request_data)
+
+        # Return success response
+        logger.info(f"Player added successfully with data: {response_data}")
+        return https_fn.Response(
+            json.dumps({"message": response_data}),
+            status=200,
+            content_type="application/json"
+        )
+    except ValueError as e:
+        # Handle validation errors
+        logger.error(f"Validation error: {e}")
+        return https_fn.Response(
+            json.dumps({"error": str(e)}),
+            status=400,
+            content_type="application/json"
+        )
+    except Exception as e:
+        # Handle other exceptions
+        logger.error(f"Error adding player: {e}")
+        return https_fn.Response(
+            json.dumps({"error": "Internal Server Error"}),
+            status=500,
+            content_type="application/json"
+        )
 
 @https_fn.on_request()
-def createLeague(req: https_fn.Request) -> https_fn.Response:
+def addUser(req: https_fn.Request) -> https_fn.Response: 
     """
-    Endpoint to create a league. This is meant to be called for just creating a new League
+    Adds a new user to the Firestore database.
 
     Args:
-        req (https_fn.Request): The request object containing JSON data.
-
-    Fields:
-        - league_name (str): The name of the league to be created.
-        - area_id (str): The identifier of the area where the league is located.
-        - start_date (str): The start date of the league, in "YYYY-MM-DD" format.
-        - end_date (str): The end date of the league, in "YYYY-MM-DD" format.
+        req (https_fn.Request): The request object containing user details in JSON format.
 
     Returns:
-        https_fn.Response: A JSON response containing the newly created league's details,
-        including its unique Firestore ID and other provided information,
-        or an error message with an appropriate HTTP status code on failure.
+        https_fn.Response: A JSON response indicating success or error status.
+    Example:
+            JSON request body:
+            {
+                "uid": "user123",
+                "displayName": "John Doe",
+                "photoUrl": "https://example.com/johndoe.jpg",
+                "email": "johndoe@example.com"
+            }
     """
-    return api_old.createLeague(req)
+    try:
+        # Parse the JSON request body
+        request_data = req.get_json()
+        logger.info(f"Received request to add user: {request_data}")
 
-@https_fn.on_request()
-def startRound(req: https_fn.Request) -> https_fn.Response:
-    """
-    Starts a new round in a league, creating groups from unallocated players.
+        # Call the API layer to handle adding the user
+        success = api.addUser(request_data)
 
-    This function initiates a new round in a league specified by the league_id in the request.
-    It checks if there are unallocated players in the league; if so, it organizes these players into groups
-    based on their levels and updates the league's current round and status to running. The function also
-    ensures that leagues without unallocated players do not start a new round and returns an error instead.
-
-    Args:
-        req (https_fn.Request): The request object containing JSON data.
-
-    Fields:
-        - league_id (str): The unique identifier of the league for which to start a new round.
-
-    Returns:
-        https_fn.Response: A JSON response containing information about the update, including:
-        - A success message and details of the new round if the operation is successful.
-        - An error message with an appropriate HTTP status code if the operation fails,
-          such as when there are no unallocated players or the league does not exist.
-
-    Raises:
-        ValueError: If the league does not have unallocated players or if the league_id does not correspond to an existing league.
-    """
-    return api_old.startRound(req)
-
-
-
+        if success:
+            return https_fn.Response(
+                json.dumps({"message": "User added successfully"}),
+                status=200,
+                content_type="application/json"
+            )
+        else:
+            return https_fn.Response(
+                json.dumps({"error": "User with this UID already exists"}),
+                status=409,
+                content_type="application/json"
+            )
+    except ValueError as e:
+        logger.error(f"Validation error: {e}")
+        return https_fn.Response(
+            json.dumps({"error": str(e)}),
+            status=400,
+            content_type="application/json"
+        )
+    except Exception as e:
+        logger.error(f"Error adding user: {e}")
+        return https_fn.Response(
+            json.dumps({"error": "Internal Server Error"}),
+            status=500,
+            content_type="application/json"
+        )

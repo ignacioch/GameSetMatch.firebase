@@ -1,35 +1,66 @@
 #!/bin/bash
 
-# Validate number of arguments
-if [ "$#" -ne 5 ]; then
-    echo "Usage: $0 [--local] player_a_id player_b_id score match_date location"
+# Function to show script usage
+show_usage() {
+    echo "Usage: $0 --local | --remote --player_id <player_id> | --uid <uid>"
+    echo "  --local            Test against the local Firebase emulator."
+    echo "  --remote           Test against the deployed Firebase function."
+    echo "  --player_id <id>   Pass the player_id to search by."
+    echo "  --uid <uid>        Pass the uid to search by."
     exit 1
+}
+
+# Check if correct number of arguments is passed
+if [ "$#" -lt 3 ]; then
+    show_usage
 fi
 
-# Assign arguments to variables
+# Set the deployed and local URLs (replace <your-firebase-project-id> with your project)
+DEPLOYED_URL="https://us-central1-gamesetmatch-ef350/cloudfunctions.net/getPlayerDetails"
+LOCAL_URL="http://localhost:5001/gamesetmatch-ef350/us-central1/getPlayerDetails"
 
-# URL of the Cloud Function
-LOCAL_URL="http://localhost:5001/gamesetmatch-ef350/us-central1/addMatch"
-REMOTE_URL="https://us-central1-gamesetmatch-ef350.cloudfunctions.net/addMatch"
+# Initialize variables for the environment and query parameters
+URL=""
+QUERY_PARAM=""
 
-# Check if the first argument is --local
-if [ "$1" == "--local" ]; then
-    URL="$LOCAL_URL"
-    PLAYER_A_ID="$2"
-    PLAYER_B_ID="$3"
-    SCORE="$4"
-    MATCH_DATE="$5"
-    LOCATION="$6"
-else
-    URL="$REMOTE_URL"
-    PLAYER_A_ID="$1"
-    PLAYER_B_ID="$2"
-    SCORE="$3"
-    MATCH_DATE="$4"
-    LOCATION="$5"
-fi
+# Process the arguments
+case "$1" in
+    --local)
+        URL=$LOCAL_URL
+        ;;
+    --remote)
+        URL=$DEPLOYED_URL
+        ;;
+    *)
+        echo "Invalid environment argument."
+        show_usage
+        ;;
+esac
 
-# Construct and send the curl command
-curl -X POST "$URL" \
--H "Content-Type: application/json" \
--d "{\"player_a_id\": \"$PLAYER_A_ID\", \"player_b_id\": \"$PLAYER_B_ID\", \"score\": \"$SCORE\", \"date\": \"$MATCH_DATE\", \"location\": \"$LOCATION\"}"
+# Check for either --player_id or --uid
+case "$2" in
+    --player_id)
+        if [ -z "$3" ]; then
+            echo "player_id value is missing."
+            show_usage
+        fi
+        QUERY_PARAM="player_id=$3"
+        ;;
+    --uid)
+        if [ -z "$3" ]; then
+            echo "uid value is missing."
+            show_usage
+        fi
+        QUERY_PARAM="uid=$3"
+        ;;
+    *)
+        echo "Invalid search parameter."
+        show_usage
+        ;;
+esac
+
+# Make the GET request and store the response
+response=$(curl -s -w "\nHTTP Status: %{http_code}\n" "$URL?$QUERY_PARAM")
+
+# Output the response
+echo "$response"
